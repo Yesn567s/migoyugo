@@ -1,0 +1,671 @@
+/* ================================================
+   Migoyugo - Local 2 Player Board Game
+   ================================================
+   CSS styling for the Migoyugo game interface.
+   This stylesheet handles the visual design of:
+   - The game board and tiles
+   - Player turn indicators and scoring
+   - Game controls and UI panels
+   - Responsive layout for different screen sizes
+   ================================================ */
+
+/* ================================================
+   CSS Variables: Color Palette & Theme
+   ================================================ */
+:root {
+  --bg: #0b1020;
+  --panel: rgba(12, 18, 40, 0.82);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --text: #f4f7ff;
+  --muted: #9aa7c7;
+  --grid: rgba(255, 255, 255, 0.1);
+  --white: #f5f7ff;
+  --black: #14181f;
+  --white-glow: rgba(248, 250, 255, 0.55);
+  --black-glow: rgba(9, 12, 18, 0.55);
+  --accent: #7dd3fc;
+  --accent-2: #f9a8d4;
+  --danger: #fb7185;
+  --success: #34d399;
+}
+
+/* ================================================
+   Global & Layout Styles
+   ================================================ */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(125, 211, 252, 0.18),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(249, 168, 212, 0.16),
+      transparent 28%
+    ),
+    linear-gradient(145deg, #060916 0%, #0b1020 45%, #111832 100%);
+  color: var(--text);
+}
+
+body {
+  padding: 24px;
+}
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ================================================
+   Hero Section: Title & Info
+   ================================================ */
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.title-block h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 4rem);
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.title-block p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  max-width: 760px;
+  line-height: 1.5;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+/* ================================================
+   Main Grid Layout
+   ================================================ */
+.grid-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(16px);
+  border-radius: 24px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+}
+
+/* ================================================
+   Sidebar Panel: Stats & Controls
+   ================================================ */
+.side {
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.status-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.03)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.status-label {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ================================================
+   Turn Indicator
+   ================================================ */
+.turn-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.turn-name {
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.turn-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
+}
+
+.turn-dot.white {
+  background: var(--white);
+  box-shadow: 0 0 18px var(--white-glow);
+}
+
+.turn-dot.black {
+  background: var(--black);
+  box-shadow: 0 0 18px var(--black-glow);
+}
+
+/* ================================================
+   Player Stats Display
+   ================================================ */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stat span {
+  display: block;
+}
+
+.stat .label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.stat .value {
+  font-size: 1.55rem;
+  font-weight: 800;
+}
+
+/* ================================================
+   Victory Rules Legend
+   ================================================ */
+.legend {
+  display: grid;
+  gap: 10px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.legend-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ================================================
+   Piece Samples (Legend Icons)
+   ================================================ */
+.piece-sample {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.piece-sample.circle::before,
+.piece-sample.square::before,
+.piece-sample.triangle::before,
+.piece-sample.oval::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.piece-sample.circle::before {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--white);
+}
+
+.piece-sample.square::before {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #7dd3fc;
+}
+
+.piece-sample.triangle::before {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 18px solid #f9a8d4;
+  top: 3px;
+}
+
+.piece-sample.oval::before {
+  width: 22px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fb7185;
+  top: 9px;
+}
+
+.piece-sample.oval::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  top: 13px;
+  left: 13px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+}
+
+/* ================================================
+   Game Board Container & Grid
+   ================================================ */
+.board-wrap {
+  padding: 18px;
+}
+
+.board-shell {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.03)
+    ),
+    radial-gradient(
+      circle at center,
+      rgba(125, 211, 252, 0.08),
+      transparent 40%
+    ),
+    #0d1428;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.board {
+  position: absolute;
+  inset: 12px 12px 28px 28px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  padding: 8px;
+  gap: 6px;
+}
+
+/* ================================================
+   Board Coordinate Labels (A-H, 1-8)
+   ================================================ */
+.board-file-labels {
+  position: absolute;
+  left: 28px;
+  right: 12px;
+  bottom: 6px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  align-items: center;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.board-rank-labels {
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  bottom: 28px;
+  display: grid;
+  grid-template-rows: repeat(8, 1fr);
+  align-items: center;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.coord-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(226, 232, 240, 0.62);
+  text-transform: lowercase;
+}
+
+/* ================================================
+   Board Cells (Squares)
+   ================================================ */
+.cell {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid var(--grid);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+  overflow: hidden;
+}
+
+.cell:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.08),
+    transparent 48%
+  );
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cell.active-turn {
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 211, 252, 0.5),
+    0 0 0 2px rgba(125, 211, 252, 0.12);
+}
+
+/* ================================================
+   Game Pieces (Tiles on Board)
+   ================================================ */
+.piece {
+  position: absolute;
+  inset: 11%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  pointer-events: none;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+  z-index: 2;
+}
+
+.piece.circle {
+  border-radius: 50%;
+}
+
+.piece.white.circle {
+  background: linear-gradient(180deg, #ffffff, #cfd8ff);
+  box-shadow: 0 0 18px var(--white-glow);
+}
+
+.piece.black.circle {
+  background: linear-gradient(180deg, #2b3442, #0d1118);
+  box-shadow: 0 0 18px var(--black-glow);
+}
+
+/* ================================================
+   Yugo (Permanent Tiles with Stacks)
+   ================================================ */
+.piece.yugo {
+  inset: 8%;
+}
+
+.piece.yugo.white {
+  background: linear-gradient(180deg, #ffffff, #dbe5ff);
+  box-shadow: 0 0 24px rgba(248, 250, 255, 0.48);
+}
+
+.piece.yugo.black {
+  background: linear-gradient(180deg, #2b3442, #0a0e15);
+  box-shadow: 0 0 24px rgba(9, 12, 18, 0.5);
+}
+
+.piece.shape-triangle {
+  clip-path: polygon(50% 10%, 92% 88%, 8% 88%);
+}
+
+.piece.shape-square {
+  border-radius: 16px;
+}
+
+.piece.shape-oval {
+  border-radius: 999px;
+}
+
+.piece.shape-diamond {
+  clip-path: polygon(50% 4%, 96% 50%, 50% 96%, 4% 50%);
+}
+
+/* ================================================
+   Stack Indicators (Red Dots inside Yugo)
+   ================================================ */
+.piece .inner-dot {
+  position: absolute;
+  width: 18%;
+  height: 18%;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
+}
+
+.piece .inner-dot.stack-2 {
+  border-radius: 999px;
+  width: 22%;
+  height: 14%;
+}
+
+.piece .inner-dot.stack-3 {
+  width: 20%;
+  height: 20%;
+  background: #ef4444;
+  box-shadow: none;
+  clip-path: polygon(50% 10%, 92% 88%, 8% 88%);
+}
+
+.piece .inner-dot.stack-4 {
+  border-radius: 8%;
+  width: 20%;
+  height: 20%;
+  box-shadow: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.piece .inner-dot.stack-4 {
+  border-radius: 8%;
+  width: 20%;
+  height: 20%;
+}
+
+/* ================================================
+   Piece Animation
+   ================================================ */
+.piece.recent {
+  animation: pop 0.18s ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.85);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ================================================
+   Footer & Actions
+   ================================================ */
+.footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button.action {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 16px;
+  font: inherit;
+  font-weight: 700;
+  color: #09101e;
+  cursor: pointer;
+  background: linear-gradient(135deg, #a5f3fc, #f9a8d4);
+  box-shadow: 0 12px 30px rgba(125, 211, 252, 0.18);
+}
+
+button.action.secondary {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+button.action:hover {
+  transform: translateY(-1px);
+}
+
+/* ================================================
+   Game Log & Notes
+   ================================================ */
+.log {
+  min-height: 54px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #dce6ff;
+  line-height: 1.45;
+}
+
+.board-note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ================================================
+   Responsive Design - Tablet
+   ================================================ */
+@media (max-width: 960px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .board-wrap {
+    order: -1;
+  }
+}
+
+/* ================================================
+   Responsive Design - Mobile
+   ================================================ */
+@media (max-width: 640px) {
+  body {
+    padding: 14px;
+  }
+
+  .panel {
+    border-radius: 20px;
+  }
+
+  .board {
+    padding: 10px;
+    gap: 4px;
+  }
+
+  .cell {
+    border-radius: 12px;
+  }
+
+  .board {
+    inset: 10px 10px 24px 24px;
+    gap: 4px;
+  }
+
+  .board-file-labels {
+    left: 24px;
+    right: 10px;
+    bottom: 4px;
+  }
+
+  .board-rank-labels {
+    left: 4px;
+    top: 10px;
+    bottom: 24px;
+  }
+
+  .coord-label {
+    font-size: 0.56rem;
+  }
+
+  .piece.yugo {
+    inset: 10%;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
