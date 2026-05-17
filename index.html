@@ -27,6 +27,24 @@
         -webkit-tap-highlight-color: transparent;
       }
 
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
       body {
         margin: 0;
         min-height: 100svh;
@@ -47,6 +65,11 @@
         display: grid;
         place-items: center;
         padding: clamp(12px, 4vw, 24px);
+        animation: fadeIn 0.8s ease-in;
+      }
+
+      body.fade-out {
+        animation: fadeOut 0.6s ease-out forwards;
       }
 
       .menu-shell {
@@ -308,6 +331,50 @@
       .modal-content li:last-child {
         margin-bottom: 0;
       }
+
+      /* Loading Screen */
+      .loading-screen {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(
+          145deg,
+          #060916 0%,
+          #0b1020 45%,
+          #111832 100%
+        );
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .loading-screen.active {
+        display: flex;
+      }
+
+      .spinner {
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(125, 211, 252, 0.2);
+        border-top-color: #7dd3fc;
+        border-right-color: #f9a8d4;
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        color: var(--muted);
+        font-size: 0.95rem;
+        letter-spacing: 0.05em;
+      }
     </style>
   </head>
   <body>
@@ -429,10 +496,18 @@
       </div>
     </div>
 
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading...</div>
+    </div>
+
     <script>
       const btnRules = document.getElementById("btnRules");
       const btnCloseRules = document.getElementById("btnCloseRules");
       const rulesModal = document.getElementById("rulesModal");
+      const playButton = document.querySelector('a[href="migoyugo.html"]');
+      const loadingScreen = document.getElementById("loadingScreen");
 
       function openModal() {
         rulesModal.classList.add("active");
@@ -451,6 +526,16 @@
         if (e.target === rulesModal) {
           closeModal();
         }
+      });
+
+      // Fade out animation before navigation
+      playButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        loadingScreen.classList.add("active");
+        document.body.classList.add("fade-out");
+        setTimeout(() => {
+          window.location.href = "migoyugo.html";
+        }, 600);
       });
     </script>
   </body>

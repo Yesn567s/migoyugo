@@ -30,6 +30,24 @@
         -webkit-tap-highlight-color: transparent;
       }
 
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
       html,
       body {
         margin: 0;
@@ -48,6 +66,12 @@
           ),
           linear-gradient(145deg, #060916 0%, #0b1020 45%, #111832 100%);
         color: var(--text);
+        animation: fadeIn 0.8s ease-in;
+      }
+
+      html.fade-out,
+      body.fade-out {
+        animation: fadeOut 0.6s ease-out forwards;
       }
 
       body {
@@ -374,6 +398,85 @@
         }
       }
 
+      /* Placement Animation */
+      @keyframes placeDown {
+        0% {
+          transform: scale(0) translateY(-20px);
+          opacity: 0;
+        }
+        60% {
+          transform: scale(1.1);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .piece.place-animation {
+        animation: placeDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* Yugo Formation Animation */
+      @keyframes yugoGlow {
+        0% {
+          filter: drop-shadow(0 0 0px rgba(125, 211, 252, 0.8));
+          transform: scale(1);
+        }
+        50% {
+          filter: drop-shadow(0 0 12px rgba(125, 211, 252, 0.8));
+          transform: scale(1.05);
+        }
+        100% {
+          filter: drop-shadow(0 0 0px rgba(125, 211, 252, 0));
+          transform: scale(1);
+        }
+      }
+
+      .piece.yugo-form {
+        animation: yugoGlow 0.6s ease-out;
+      }
+
+      /* Igo Win Animation */
+      @keyframes igoWin {
+        0% {
+          transform: scale(0.9);
+          filter: drop-shadow(0 0 0px rgba(125, 211, 252, 0));
+        }
+        50% {
+          transform: scale(1.15);
+          filter: drop-shadow(0 0 20px rgba(125, 211, 252, 0.8));
+        }
+        100% {
+          transform: scale(1);
+          filter: drop-shadow(0 0 8px rgba(125, 211, 252, 0.6));
+        }
+      }
+
+      .piece.igo-win {
+        animation: igoWin 0.8s ease-out infinite;
+      }
+
+      /* Wego Celebrate Animation */
+      @keyframes wegoCelebrate {
+        0%,
+        100% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        50% {
+          transform: translateY(-8px);
+          opacity: 0.8;
+        }
+      }
+
+      .cell.wego-celebrate {
+        animation: wegoCelebrate 0.6s ease-in-out;
+      }
+
+      /* Shake Animation (already exists but kept for reference) */
+
       .footer-row {
         display: flex;
         flex-wrap: wrap;
@@ -635,6 +738,50 @@
           grid-template-columns: 1fr;
         }
       }
+
+      /* Loading Screen */
+      .loading-screen {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(
+          145deg,
+          #060916 0%,
+          #0b1020 45%,
+          #111832 100%
+        );
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .loading-screen.active {
+        display: flex;
+      }
+
+      .spinner {
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(125, 211, 252, 0.2);
+        border-top-color: #7dd3fc;
+        border-right-color: #f9a8d4;
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        color: var(--muted);
+        font-size: 0.95rem;
+        letter-spacing: 0.05em;
+      }
     </style>
   </head>
   <body>
@@ -767,7 +914,7 @@
         <div class="chip-row">
           <a
             href="index.html"
-            class="chip"
+            class="chip menu-link"
             style="
               text-decoration: none;
               display: flex;
@@ -848,6 +995,12 @@
           </div>
         </section>
       </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading...</div>
     </div>
 
     <script>
@@ -1100,6 +1253,31 @@
             `${players[player].name} formed a Yugo at ${cellName(row, col)}!`,
             true,
           );
+
+          // Animate yugo formation on all affected cells
+          setTimeout(() => {
+            const affectedCells = new Set();
+            affectedCells.add(`${row}:${col}`);
+            for (const line of lines) {
+              for (const [r, c] of line) {
+                affectedCells.add(`${r}:${c}`);
+              }
+            }
+
+            const cells = boardElement.querySelectorAll(".cell");
+            cells.forEach((cell) => {
+              const r = Number(cell.dataset.row);
+              const c = Number(cell.dataset.col);
+              if (affectedCells.has(`${r}:${c}`)) {
+                const piece = cell.querySelector(".piece");
+                if (piece) {
+                  piece.classList.remove("place-animation");
+                  void piece.offsetWidth; // trigger reflow
+                  piece.classList.add("yugo-form");
+                }
+              }
+            });
+          }, 100);
         }
 
         if (checkIgo(player)) {
@@ -1107,6 +1285,35 @@
           state.winner = player;
           pushLog(`${players[player].name} wins by Igo!`, true);
           render();
+
+          // Animate Igo winning pieces
+          setTimeout(() => {
+            const yugos = [];
+            for (let r = 0; r < size; r += 1) {
+              for (let c = 0; c < size; c += 1) {
+                const tile = state.board[r][c];
+                if (tile && tile.player === player && tile.yugo) {
+                  yugos.push([r, c]);
+                }
+              }
+            }
+
+            const cells = boardElement.querySelectorAll(".cell");
+            cells.forEach((cell) => {
+              const r = Number(cell.dataset.row);
+              const c = Number(cell.dataset.col);
+              const isWinningYugo = yugos.some(
+                ([yr, yc]) => yr === r && yc === c,
+              );
+              if (isWinningYugo) {
+                const piece = cell.querySelector(".piece");
+                if (piece) {
+                  piece.classList.add("igo-win");
+                }
+              }
+            });
+          }, 200);
+
           setTimeout(
             () =>
               showGameOver(
@@ -1134,6 +1341,15 @@
           state.winner = result.winner;
           pushLog(result.message, true);
           render();
+
+          // Animate wego celebration
+          setTimeout(() => {
+            const cells = boardElement.querySelectorAll(".cell");
+            cells.forEach((cell) => {
+              cell.classList.add("wego-celebrate");
+            });
+          }, 200);
+
           setTimeout(() => showGameOver(result.winner, result.message), 300);
           return;
         }
@@ -1342,7 +1558,7 @@
 
           const piece = document.createElement("div");
           const colorClass = tile.player === 1 ? "white" : "black";
-          piece.className = `piece ${colorClass} circle recent${tile.yugo ? " yugo" : ""}`;
+          piece.className = `piece ${colorClass} circle ${tile.yugo ? "yugo" : "place-animation"}`;
 
           if (tile.yugo) {
             piece.classList.add("yugo");
@@ -1353,7 +1569,10 @@
           }
 
           cell.appendChild(piece);
-          requestAnimationFrame(() => piece.classList.remove("recent"));
+          requestAnimationFrame(() => {
+            piece.classList.remove("place-animation");
+            piece.classList.remove("recent");
+          });
         });
 
         scoreWhiteElement.textContent = String(countPlayerPoints(1));
@@ -1397,6 +1616,18 @@
       }
 
       restartBtn.addEventListener("click", resetGame);
+
+      // Handle fade-out animation for menu link
+      const menuLink = document.querySelector(".menu-link");
+      const loadingScreen = document.getElementById("loadingScreen");
+      menuLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        loadingScreen.classList.add("active");
+        document.documentElement.classList.add("fade-out");
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 600);
+      });
 
       // Initialize board underneath the modal
       buildBoard();
