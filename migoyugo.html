@@ -1,1088 +1,1406 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Migoyugo - Local 2 Player</title>
-	<style>
-		:root {
-			--bg: #0b1020;
-			--panel: rgba(12, 18, 40, 0.82);
-			--panel-border: rgba(255, 255, 255, 0.1);
-			--text: #f4f7ff;
-			--muted: #9aa7c7;
-			--grid: rgba(255, 255, 255, 0.1);
-			--white: #f5f7ff;
-			--black: #14181f;
-			--white-glow: rgba(248, 250, 255, 0.55);
-			--black-glow: rgba(9, 12, 18, 0.55);
-			--accent: #7dd3fc;
-			--accent-2: #f9a8d4;
-			--danger: #fb7185;
-			--success: #34d399;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		html, body {
-			margin: 0;
-			min-height: 100%;
-			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-			background:
-				radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 30%),
-				radial-gradient(circle at bottom right, rgba(249, 168, 212, 0.16), transparent 28%),
-				linear-gradient(145deg, #060916 0%, #0b1020 45%, #111832 100%);
-			color: var(--text);
-		}
-
-		body {
-			padding: 24px;
-		}
-
-		.shell {
-			max-width: 1180px;
-			margin: 0 auto;
-		}
-
-		.hero {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: end;
-			justify-content: space-between;
-			gap: 16px;
-			margin-bottom: 20px;
-		}
-
-		.title-block h1 {
-			margin: 0;
-			font-size: clamp(2rem, 4vw, 4rem);
-			letter-spacing: -0.05em;
-			line-height: 0.95;
-		}
-
-		.title-block p {
-			margin: 10px 0 0;
-			color: var(--muted);
-			max-width: 760px;
-			line-height: 1.5;
-		}
-
-		.chip-row {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10px;
-		}
-
-		.chip {
-			padding: 10px 14px;
-			border-radius: 999px;
-			background: rgba(255, 255, 255, 0.06);
-			border: 1px solid rgba(255, 255, 255, 0.09);
-			color: var(--text);
-			font-size: 0.9rem;
-		}
-
-		.grid-layout {
-			display: grid;
-			grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
-			gap: 18px;
-			align-items: start;
-		}
-
-		.panel {
-			background: var(--panel);
-			border: 1px solid var(--panel-border);
-			backdrop-filter: blur(16px);
-			border-radius: 24px;
-			box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
-		}
-
-		.side {
-			padding: 18px;
-			display: grid;
-			gap: 16px;
-		}
-
-		.status-card {
-			padding: 18px;
-			border-radius: 20px;
-			background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-			border: 1px solid rgba(255, 255, 255, 0.08);
-		}
-
-		.status-label {
-			margin: 0 0 8px;
-			font-size: 0.78rem;
-			letter-spacing: 0.18em;
-			text-transform: uppercase;
-			color: var(--muted);
-		}
-
-		.turn-banner {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 12px;
-		}
-
-		.turn-name {
-			font-size: 1.45rem;
-			font-weight: 800;
-		}
-
-		.turn-dot {
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
-		}
-
-		.turn-dot.white {
-			background: var(--white);
-			box-shadow: 0 0 18px var(--white-glow);
-		}
-
-		.turn-dot.black {
-			background: var(--black);
-			box-shadow: 0 0 18px var(--black-glow);
-		}
-
-		.stats {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 12px;
-		}
-
-		.stat {
-			padding: 14px;
-			border-radius: 18px;
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.06);
-		}
-
-		.stat span {
-			display: block;
-		}
-
-		.stat .label {
-			font-size: 0.75rem;
-			color: var(--muted);
-			text-transform: uppercase;
-			letter-spacing: 0.12em;
-			margin-bottom: 6px;
-		}
-
-		.stat .value {
-			font-size: 1.55rem;
-			font-weight: 800;
-		}
-
-		.legend {
-			display: grid;
-			gap: 10px;
-		}
-
-		.legend-row {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 14px;
-			padding: 12px 14px;
-			border-radius: 16px;
-			background: rgba(255, 255, 255, 0.04);
-			border: 1px solid rgba(255, 255, 255, 0.05);
-		}
-
-		.legend-left {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-		}
-
-		.piece-sample {
-			width: 32px;
-			height: 32px;
-			position: relative;
-			flex: 0 0 auto;
-		}
-
-		.piece-sample.circle::before,
-		.piece-sample.square::before,
-		.piece-sample.triangle::before,
-		.piece-sample.oval::before {
-			content: "";
-			position: absolute;
-			inset: 0;
-			margin: auto;
-		}
-
-		.piece-sample.circle::before {
-			width: 16px;
-			height: 16px;
-			border-radius: 50%;
-			background: var(--white);
-		}
-
-		.piece-sample.square::before {
-			width: 18px;
-			height: 18px;
-			border-radius: 4px;
-			background: #7dd3fc;
-		}
-
-		.piece-sample.triangle::before {
-			width: 0;
-			height: 0;
-			border-left: 10px solid transparent;
-			border-right: 10px solid transparent;
-			border-bottom: 18px solid #f9a8d4;
-			top: 3px;
-		}
-
-		.piece-sample.oval::before {
-			width: 22px;
-			height: 14px;
-			border-radius: 999px;
-			background: #fb7185;
-			top: 9px;
-		}
-
-		.piece-sample.oval::after {
-			content: "";
-			position: absolute;
-			width: 6px;
-			height: 6px;
-			border-radius: 50%;
-			background: rgba(255, 255, 255, 0.92);
-			top: 13px;
-			left: 13px;
-			box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
-		}
-
-		.board-wrap {
-			padding: 18px;
-		}
-
-		.board-shell {
-			position: relative;
-			aspect-ratio: 1;
-			width: 100%;
-			border-radius: 28px;
-			overflow: hidden;
-			background:
-				linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
-				radial-gradient(circle at center, rgba(125, 211, 252, 0.08), transparent 40%),
-				#0d1428;
-			border: 1px solid rgba(255, 255, 255, 0.08);
-			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-		}
-
-		.board {
-			position: absolute;
-			inset: 12px 12px 28px 28px;
-			display: grid;
-			grid-template-columns: repeat(8, 1fr);
-			grid-template-rows: repeat(8, 1fr);
-			padding: 8px;
-			gap: 6px;
-		}
-
-		.board-file-labels {
-			position: absolute;
-			left: 28px;
-			right: 12px;
-			bottom: 6px;
-			display: grid;
-			grid-template-columns: repeat(8, 1fr);
-			align-items: center;
-			justify-items: center;
-			pointer-events: none;
-		}
-
-		.board-rank-labels {
-			position: absolute;
-			left: 6px;
-			top: 12px;
-			bottom: 28px;
-			display: grid;
-			grid-template-rows: repeat(8, 1fr);
-			align-items: center;
-			justify-items: center;
-			pointer-events: none;
-		}
-
-		.coord-label {
-			font-size: 0.64rem;
-			font-weight: 700;
-			letter-spacing: 0.04em;
-			color: rgba(226, 232, 240, 0.62);
-			text-transform: lowercase;
-		}
-
-		.cell {
-			position: relative;
-			border-radius: 18px;
-			border: 1px solid var(--grid);
-			background: rgba(255, 255, 255, 0.03);
-			cursor: pointer;
-			transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
-			overflow: hidden;
-		}
-
-		.cell:hover {
-			transform: translateY(-1px);
-			background: rgba(255, 255, 255, 0.07);
-			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-		}
-
-		.cell::after {
-			content: "";
-			position: absolute;
-			inset: 0;
-			background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 48%);
-			opacity: 0.55;
-			pointer-events: none;
-			z-index: 1;
-		}
-
-		.cell.active-turn {
-			box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.5), 0 0 0 2px rgba(125, 211, 252, 0.12);
-		}
-
-		.piece {
-			position: absolute;
-			inset: 11%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			color: #fff;
-			pointer-events: none;
-			transition: transform 0.18s ease, opacity 0.18s ease;
-			z-index: 2;
-		}
-
-		.piece.circle {
-			border-radius: 50%;
-		}
-
-		.piece.white.circle {
-			background: linear-gradient(180deg, #ffffff, #cfd8ff);
-			box-shadow: 0 0 18px var(--white-glow);
-		}
-
-		.piece.black.circle {
-			background: linear-gradient(180deg, #2b3442, #0d1118);
-			box-shadow: 0 0 18px var(--black-glow);
-		}
-
-		.piece.yugo {
-			inset: 8%;
-		}
-
-		.piece.yugo.white {
-			background: linear-gradient(180deg, #ffffff, #dbe5ff);
-			box-shadow: 0 0 24px rgba(248, 250, 255, 0.48);
-		}
-
-		.piece.yugo.black {
-			background: linear-gradient(180deg, #2b3442, #0a0e15);
-			box-shadow: 0 0 24px rgba(9, 12, 18, 0.5);
-		}
-
-		.piece.shape-triangle {
-			clip-path: polygon(50% 10%, 92% 88%, 8% 88%);
-		}
-
-		.piece.shape-square {
-			border-radius: 16px;
-		}
-
-		.piece.shape-oval {
-			border-radius: 999px;
-		}
-
-		.piece.shape-diamond {
-			clip-path: polygon(50% 4%, 96% 50%, 50% 96%, 4% 50%);
-		}
-
-		.piece .inner-dot {
-			position: absolute;
-			width: 18%;
-			height: 18%;
-			border-radius: 50%;
-			background: #ef4444;
-			box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
-		}
-
-		.piece .inner-dot.stack-2 {
-			border-radius: 999px;
-			width: 22%;
-			height: 14%;
-		}
-
-		.piece .inner-dot.stack-3 {
-			width: 20%;
-			height: 20%;
-			background: #ef4444;
-			box-shadow: none;
-			clip-path: polygon(50% 10%, 92% 88%, 8% 88%);
-		}
-
-		.piece .inner-dot.stack-4 {
-			border-radius: 8%;
-			width: 20%;
-			height: 20%;
-			box-shadow: none;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-		}
-
-		.piece .inner-dot.stack-4 {
-			border-radius: 8%;
-			width: 20%;
-			height: 20%;
-		}
-
-		.piece.recent {
-			animation: pop 0.18s ease-out;
-		}
-
-		@keyframes pop {
-			from { transform: scale(0.85); }
-			to { transform: scale(1); }
-		}
-
-		.footer-row {
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: space-between;
-			align-items: center;
-			gap: 12px;
-			margin-top: 16px;
-			color: var(--muted);
-			font-size: 0.92rem;
-		}
-
-		.actions {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 10px;
-		}
-
-		button.action {
-			border: 0;
-			border-radius: 999px;
-			padding: 11px 16px;
-			font: inherit;
-			font-weight: 700;
-			color: #09101e;
-			cursor: pointer;
-			background: linear-gradient(135deg, #a5f3fc, #f9a8d4);
-			box-shadow: 0 12px 30px rgba(125, 211, 252, 0.18);
-		}
-
-		button.action.secondary {
-			color: var(--text);
-			background: rgba(255, 255, 255, 0.07);
-			border: 1px solid rgba(255, 255, 255, 0.08);
-			box-shadow: none;
-		}
-
-		button.action:hover {
-			transform: translateY(-1px);
-		}
-
-		.log {
-			min-height: 54px;
-			padding: 14px;
-			border-radius: 16px;
-			background: rgba(255, 255, 255, 0.04);
-			border: 1px solid rgba(255, 255, 255, 0.05);
-			color: #dce6ff;
-			line-height: 1.45;
-		}
-
-		.board-note {
-			margin-top: 12px;
-			color: var(--muted);
-			font-size: 0.9rem;
-			line-height: 1.5;
-		}
-
-		@media (max-width: 960px) {
-			.grid-layout {
-				grid-template-columns: 1fr;
-			}
-
-			.board-wrap {
-				order: -1;
-			}
-		}
-
-		@media (max-width: 640px) {
-			body {
-				padding: 14px;
-			}
-
-			.panel {
-				border-radius: 20px;
-			}
-
-			.board {
-				padding: 10px;
-				gap: 4px;
-			}
-
-			.cell {
-				border-radius: 12px;
-			}
-
-			.board {
-				inset: 10px 10px 24px 24px;
-				gap: 4px;
-			}
-
-			.board-file-labels {
-				left: 24px;
-				right: 10px;
-				bottom: 4px;
-			}
-
-			.board-rank-labels {
-				left: 4px;
-				top: 10px;
-				bottom: 24px;
-			}
-
-			.coord-label {
-				font-size: 0.56rem;
-			}
-
-			.piece.yugo {
-				inset: 10%;
-			}
-
-			.stats {
-				grid-template-columns: 1fr;
-			}
-		}
-	</style>
-</head>
-<body>
-	<div class="shell">
-		<div class="hero">
-			<div class="title-block">
-				<h1>Migoyugo</h1>
-				<p>
-					Two players share one device and take turns placing tiles on an 8x8 board.
-					When 4 same-color tiles connect, the last placed tile becomes a Yugo and the rest disappear.
-					Win by forming 4 Yugo in a straight line, or by having the most points when the board is full.
-				</p>
-			</div>
-			<div class="chip-row">
-				<div class="chip">Hot-seat multiplayer</div>
-				<div class="chip">8x8 board</div>
-				<div class="chip">Permanent Yugo</div>
-			</div>
-		</div>
-
-		<div class="grid-layout">
-			<section class="panel side">
-				<div class="status-card">
-					<p class="status-label">Current Turn</p>
-					<div class="turn-banner">
-						<div>
-							<div id="turnName" class="turn-name">Player 1</div>
-							<div id="turnHint" style="color: var(--muted); margin-top: 4px;">Place a white tile anywhere open.</div>
-						</div>
-						<div id="turnDot" class="turn-dot white"></div>
-					</div>
-				</div>
-
-				<div class="stats">
-					<div class="stat">
-						<span class="label">White Points</span>
-						<span id="scoreWhite" class="value">0</span>
-					</div>
-					<div class="stat">
-						<span class="label">Black Points</span>
-						<span id="scoreBlack" class="value">0</span>
-					</div>
-				</div>
-
-				<div class="status-card">
-					<p class="status-label">Victory Rules</p>
-					<div class="legend">
-						<div class="legend-row">
-							<div class="legend-left"><div class="piece-sample square"></div><strong>Igo</strong></div>
-							<span style="color: var(--muted);">4 Yugo in a line</span>
-						</div>
-						<div class="legend-row">
-							<div class="legend-left"><div class="piece-sample oval"></div><strong>Wego</strong></div>
-							<span style="color: var(--muted);">Most points on a full board</span>
-						</div>
-						<div class="legend-row">
-							<div class="legend-left"><div class="piece-sample circle"></div><strong>Yugo</strong></div>
-							<span style="color: var(--muted);">Permanent tile with red dot</span>
-						</div>
-					</div>
-				</div>
-
-				<div class="log" id="log">Start by placing any tile on the board.</div>
-
-				<div class="actions">
-					<button class="action" id="restartBtn" type="button">Reset Board</button>
-					<button class="action secondary" id="fillDemoBtn" type="button">Demo Setup</button>
-					<label class="action secondary" style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer;">
-						<span>Stack Preset</span>
-						<select id="stackPresetSelect" style="background: transparent; border: 0; color: inherit; font: inherit; outline: none; cursor: pointer;">
-							<option value="">Choose</option>
-							<option value="1">1-stack</option>
-							<option value="2">2-stack</option>
-							<option value="3">3-stack</option>
-							<option value="4">4-stack</option>
-						</select>
-					</label>
-				</div>
-
-				<div class="board-note">
-					Tiles stay on the board until 4 same-color tiles make a straight line. Then the last placed tile becomes the Yugo and the others are removed.
-					When the board is full, the player with more points wins by Wego.
-				</div>
-			</section>
-
-			<section class="panel board-wrap">
-				<div class="board-shell">
-					<div id="boardRankLabels" class="board-rank-labels" aria-hidden="true"></div>
-					<div id="board" class="board" aria-label="Migoyugo board"></div>
-					<div id="boardFileLabels" class="board-file-labels" aria-hidden="true"></div>
-				</div>
-				<div class="footer-row">
-					<div>Tap or click a square to place a tile.</div>
-					<div>Same device, alternating turns.</div>
-				</div>
-			</section>
-		</div>
-	</div>
-
-	<script>
-		const size = 8;
-		const boardElement = document.getElementById("board");
-		const boardFileLabelsElement = document.getElementById("boardFileLabels");
-		const boardRankLabelsElement = document.getElementById("boardRankLabels");
-		const turnNameElement = document.getElementById("turnName");
-		const turnHintElement = document.getElementById("turnHint");
-		const turnDotElement = document.getElementById("turnDot");
-		const scoreWhiteElement = document.getElementById("scoreWhite");
-		const scoreBlackElement = document.getElementById("scoreBlack");
-		const logElement = document.getElementById("log");
-		const restartBtn = document.getElementById("restartBtn");
-		const fillDemoBtn = document.getElementById("fillDemoBtn");
-		const stackPresetSelect = document.getElementById("stackPresetSelect");
-
-		const players = {
-			1: { name: "Player 1", color: "white", label: "white" },
-			2: { name: "Player 2", color: "black", label: "black" }
-		};
-
-		const state = {
-			board: createEmptyBoard(),
-			turn: 1,
-			gameOver: false,
-			winner: null
-		};
-
-		function createEmptyBoard() {
-			return Array.from({ length: size }, () => Array.from({ length: size }, () => null));
-		}
-
-		function buildBoardEdgeLabels() {
-			boardFileLabelsElement.innerHTML = "";
-			boardRankLabelsElement.innerHTML = "";
-
-			for (let col = 0; col < size; col += 1) {
-				const fileLabel = document.createElement("span");
-				fileLabel.className = "coord-label";
-				fileLabel.textContent = String.fromCharCode(97 + col);
-				boardFileLabelsElement.appendChild(fileLabel);
-			}
-
-			for (let row = 0; row < size; row += 1) {
-				const rankLabel = document.createElement("span");
-				rankLabel.className = "coord-label";
-				rankLabel.textContent = String(row + 1);
-				boardRankLabelsElement.appendChild(rankLabel);
-			}
-		}
-
-		function buildBoard() {
-			boardElement.innerHTML = "";
-			buildBoardEdgeLabels();
-			for (let row = 0; row < size; row += 1) {
-				for (let col = 0; col < size; col += 1) {
-					const cell = document.createElement("button");
-					cell.type = "button";
-					cell.className = "cell";
-					cell.dataset.row = String(row);
-					cell.dataset.col = String(col);
-					cell.setAttribute("aria-label", `Row ${row + 1} Column ${col + 1}`);
-					cell.addEventListener("click", onCellClick);
-					boardElement.appendChild(cell);
-				}
-			}
-		}
-
-		function onCellClick(event) {
-			if (state.gameOver) {
-				setLog("The game is over. Reset to start again.");
-				return;
-			}
-
-			const cell = event.currentTarget;
-			const row = Number(cell.dataset.row);
-			const col = Number(cell.dataset.col);
-
-			if (state.board[row][col]) {
-				setLog("That square is already occupied.");
-				return;
-			}
-
-			placeTile(row, col);
-		}
-
-		function placeTile(row, col) {
-			const player = state.turn;
-			state.board[row][col] = { player, yugo: false };
-			setLog(`${players[player].name} placed a tile at ${cellName(row, col)}.`);
-
-			const lines = findAllStraightLines(row, col, player);
-			if (lines.length > 0) {
-				formYugo(lines, player, { row, col });
-				setLog(`${players[player].name} formed a ${lines.length}-stack Yugo at ${cellName(row, col)}.`);
-			}
-
-			if (checkIgo(player)) {
-				state.gameOver = true;
-				state.winner = player;
-				setLog(`${players[player].name} wins by Igo: 4 Yugo in a line.`);
-				render();
-				return;
-			}
-
-			if (isBoardFull()) {
-				state.gameOver = true;
-				const result = evaluateWego();
-				state.winner = result.winner;
-				setLog(result.message);
-				render();
-				return;
-			}
-
-			state.turn = state.turn === 1 ? 2 : 1;
-			render();
-		}
-
-		function inBounds(row, col) {
-			return row >= 0 && row < size && col >= 0 && col < size;
-		}
-
-		function isPlayerCell(row, col, player) {
-			const tile = state.board[row][col];
-			return tile && tile.player === player;
-		}
-
-		function cellName(row, col) {
-			return `${String.fromCharCode(65 + col)}${row + 1}`;
-		}
-
-		function findAllStraightLines(row, col, player) {
-			const directions = [
-				[0, 1],
-				[1, 0],
-				[1, 1],
-				[1, -1]
-			];
-
-			const validLines = [];
-
-			for (const [dr, dc] of directions) {
-				const cells = [[row, col]];
-
-				let currentRow = row - dr;
-				let currentCol = col - dc;
-				while (inBounds(currentRow, currentCol) && isPlayerCell(currentRow, currentCol, player)) {
-					cells.unshift([currentRow, currentCol]);
-					currentRow -= dr;
-					currentCol -= dc;
-				}
-
-				currentRow = row + dr;
-				currentCol = col + dc;
-				while (inBounds(currentRow, currentCol) && isPlayerCell(currentRow, currentCol, player)) {
-					cells.push([currentRow, currentCol]);
-					currentRow += dr;
-					currentCol += dc;
-				}
-
-				if (cells.length >= 4) {
-					validLines.push(cells);
-				}
-			}
-
-			return validLines;
-		}
-
-		function formYugo(lines, player, anchor) {
-			const tilesToRemove = new Set();
-
-			for (const line of lines) {
-				for (const [row, col] of line) {
-					tilesToRemove.add(`${row}:${col}`);
-				}
-			}
-
-			for (const key of tilesToRemove) {
-				const [row, col] = key.split(':').map(Number);
-				const tile = state.board[row][col];
-				if (tile && !tile.yugo) {
-					state.board[row][col] = null;
-				}
-			}
-
-			state.board[anchor.row][anchor.col] = { player, yugo: true, stacks: lines.length };
-		}
-
-		function checkIgo(player) {
-			const yugos = [];
-
-			for (let row = 0; row < size; row += 1) {
-				for (let col = 0; col < size; col += 1) {
-					if (state.board[row][col] && state.board[row][col].player === player && state.board[row][col].yugo) {
-						yugos.push([row, col]);
-					}
-				}
-			}
-
-			const yugoSet = new Set(yugos.map(([row, col]) => `${row}:${col}`));
-
-			for (const [row, col] of yugos) {
-				for (const [dr, dc] of [
-					[0, 1],
-					[1, 0],
-					[1, 1],
-					[1, -1]
-				]) {
-					let count = 1;
-
-					for (let step = 1; step < 4; step += 1) {
-						if (yugoSet.has(`${row + dr * step}:${col + dc * step}`)) {
-							count += 1;
-						} else {
-							break;
-						}
-					}
-
-					if (count >= 4) {
-						return true;
-					}
-				}
-			}
-
-			return false;
-		}
-
-		function isBoardFull() {
-			for (let row = 0; row < size; row += 1) {
-				for (let col = 0; col < size; col += 1) {
-					if (!state.board[row][col]) {
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-
-		function evaluateWego() {
-			const white = countPlayerPoints(1);
-			const black = countPlayerPoints(2);
-
-			if (white === black) {
-				return { winner: null, message: `Wego draw: both players have ${white} points.` };
-			}
-
-			const winner = white > black ? 1 : 2;
-			return {
-				winner,
-				message: `${players[winner].name} wins by Wego with ${Math.max(white, black)} points against ${Math.min(white, black)}.`
-			};
-		}
-
-		function setLog(message) {
-			logElement.textContent = message;
-		}
-
-		function render() {
-			const cells = boardElement.querySelectorAll(".cell");
-			cells.forEach((cell) => {
-				const row = Number(cell.dataset.row);
-				const col = Number(cell.dataset.col);
-				const tile = state.board[row][col];
-
-				cell.innerHTML = "";
-				cell.classList.toggle("active-turn", !state.gameOver && !tile);
-
-				if (!tile) {
-					return;
-				}
-
-				const piece = document.createElement("div");
-				const colorClass = tile.player === 1 ? "white" : "black";
-				piece.className = `piece ${colorClass} circle recent${tile.yugo ? " yugo" : ""}`;
-
-				if (tile.yugo) {
-					piece.classList.add("yugo");
-					const dot = document.createElement("div");
-					const stacks = tile.stacks || 1;
-					dot.className = `inner-dot${stacks >= 2 ? ` stack-${stacks}` : ''}`;
-					piece.appendChild(dot);
-				}
-
-				cell.appendChild(piece);
-				requestAnimationFrame(() => piece.classList.remove("recent"));
-			});
-
-			scoreWhiteElement.textContent = String(countPlayerPoints(1));
-			scoreBlackElement.textContent = String(countPlayerPoints(2));
-
-			const current = players[state.turn];
-			turnNameElement.textContent = current.name;
-			turnHintElement.textContent = state.gameOver
-				? state.winner
-					? `${players[state.winner].name} has won. Reset to play again.`
-					: "Board finished. Reset to play again."
-				: `Place a ${current.color} tile anywhere open.`;
-			turnDotElement.className = `turn-dot ${current.color}`;
-
-			restartBtn.disabled = false;
-		}
-
-		function resetGame() {
-			state.board = createEmptyBoard();
-			state.turn = 1;
-			state.gameOver = false;
-			state.winner = null;
-			setLog("Start by placing any tile on the board.");
-			render();
-		}
-
-		function fillDemo() {
-			resetGame();
-
-			const demoTiles = [
-				[1, 1, 1, true],
-				[1, 2, 1, true],
-				[1, 3, 1, true],
-				[1, 4, 1, true],
-				[5, 5, 2, true],
-				[5, 6, 2, true],
-				[6, 5, 2, true],
-				[6, 6, 2, true]
-			];
-
-			for (const [row, col, player, yugo] of demoTiles) {
-				state.board[row][col] = { player, yugo, stacks: 1 };
-			}
-
-			setLog(`Demo board loaded. White points: ${countPlayerPoints(1)}, Black points: ${countPlayerPoints(2)}.`);
-			state.turn = 1;
-			render();
-		}
-
-		function fillStackPreset(stackCount) {
-			resetGame();
-
-			const presetTilesByStack = {
-				1: [
-					[3, 0, 1],
-					[3, 1, 1],
-					[3, 2, 1]
-				],
-				2: [
-					[3, 0, 1],
-					[3, 1, 1],
-					[3, 2, 1],
-					[0, 3, 1],
-					[1, 3, 1],
-					[2, 3, 1]
-				],
-				3: [
-					[3, 0, 1],
-					[3, 1, 1],
-					[3, 2, 1],
-					[0, 3, 1],
-					[1, 3, 1],
-					[2, 3, 1],
-					[0, 0, 1],
-					[1, 1, 1],
-					[2, 2, 1]
-				],
-				4: [
-					[3, 0, 1],
-					[3, 1, 1],
-					[3, 2, 1],
-					[0, 3, 1],
-					[1, 3, 1],
-					[2, 3, 1],
-					[0, 0, 1],
-					[1, 1, 1],
-					[2, 2, 1],
-					[0, 6, 1],
-					[1, 5, 1],
-					[2, 4, 1]
-				]
-			};
-
-			const presetTiles = presetTilesByStack[stackCount] || [];
-
-			for (const [row, col, player] of presetTiles) {
-				state.board[row][col] = { player, yugo: false, stacks: 0 };
-			}
-
-			state.turn = 1;
-			setLog(`Stack preset loaded for ${stackCount}-stack. Place the missing tile to complete it.`);
-			render();
-		}
-
-		function countPlayerPoints(player) {
-			let total = 0;
-
-			for (let row = 0; row < size; row += 1) {
-				for (let col = 0; col < size; col += 1) {
-					const tile = state.board[row][col];
-					if (tile && tile.player === player && tile.yugo) {
-						total += tile.stacks || 1;
-					}
-				}
-			}
-
-			return total;
-		}
-
-		restartBtn.addEventListener("click", resetGame);
-		fillDemoBtn.addEventListener("click", fillDemo);
-		stackPresetSelect.addEventListener("change", (event) => {
-			const stackCount = Number(event.target.value);
-			if (stackCount >= 1 && stackCount <= 4) {
-				fillStackPreset(stackCount);
-			}
-			event.target.value = "";
-		});
-
-		buildBoard();
-		resetGame();
-	</script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Migoyugo - Local 2 Player</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: rgba(12, 18, 40, 0.82);
+        --panel-border: rgba(255, 255, 255, 0.1);
+        --text: #f4f7ff;
+        --muted: #9aa7c7;
+        --grid: rgba(255, 255, 255, 0.1);
+        --white: #f5f7ff;
+        --black: #14181f;
+        --white-glow: rgba(248, 250, 255, 0.55);
+        --black-glow: rgba(9, 12, 18, 0.55);
+        --accent: #7dd3fc;
+        --accent-2: #f9a8d4;
+        --danger: #fb7185;
+        --success: #34d399;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100svh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(125, 211, 252, 0.18),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(249, 168, 212, 0.16),
+            transparent 28%
+          ),
+          linear-gradient(145deg, #060916 0%, #0b1020 45%, #111832 100%);
+        color: var(--text);
+      }
+
+      body {
+        padding: clamp(14px, 3vw, 24px);
+      }
+      .shell {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      .hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .title-block h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3rem);
+        letter-spacing: -0.05em;
+        line-height: 0.95;
+      }
+      .title-block p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        max-width: 760px;
+        line-height: 1.5;
+        font-size: clamp(0.9rem, 2vw, 1rem);
+      }
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .chip {
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        color: var(--text);
+        font-size: 0.85rem;
+      }
+      .grid-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        backdrop-filter: blur(16px);
+        border-radius: 24px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+      }
+      .side {
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+      }
+      .status-card {
+        padding: 18px;
+        border-radius: 20px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.03)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .status-label {
+        margin: 0 0 8px;
+        font-size: 0.78rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .turn-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .turn-name {
+        font-size: 1.45rem;
+        font-weight: 800;
+        word-break: break-word;
+      }
+
+      .turn-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+      }
+      .turn-dot.white {
+        background: var(--white);
+        box-shadow: 0 0 18px var(--white-glow);
+      }
+      .turn-dot.black {
+        background: var(--black);
+        box-shadow: 0 0 18px var(--black-glow);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .stat {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .stat span {
+        display: block;
+      }
+      .stat .label {
+        font-size: 0.75rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .stat .value {
+        font-size: 1.55rem;
+        font-weight: 800;
+      }
+      .board-wrap {
+        padding: 18px;
+      }
+
+      .board-shell {
+        position: relative;
+        aspect-ratio: 1;
+        width: 100%;
+        border-radius: 28px;
+        overflow: hidden;
+        background:
+          linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.03)
+          ),
+          radial-gradient(
+            circle at center,
+            rgba(125, 211, 252, 0.08),
+            transparent 40%
+          ),
+          #0d1428;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+      }
+
+      .board {
+        position: absolute;
+        inset: 12px 12px 28px 28px;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        padding: 8px;
+        gap: 6px;
+      }
+      .board-file-labels,
+      .board-rank-labels {
+        position: absolute;
+        display: grid;
+        align-items: center;
+        justify-items: center;
+        pointer-events: none;
+      }
+      .board-file-labels {
+        left: 28px;
+        right: 12px;
+        bottom: 6px;
+        grid-template-columns: repeat(8, 1fr);
+      }
+      .board-rank-labels {
+        left: 6px;
+        top: 12px;
+        bottom: 28px;
+        grid-template-rows: repeat(8, 1fr);
+      }
+      .coord-label {
+        font-size: 0.64rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: rgba(226, 232, 240, 0.62);
+        text-transform: lowercase;
+      }
+
+      .cell {
+        position: relative;
+        border-radius: 18px;
+        border: 1px solid var(--grid);
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        transition:
+          transform 0.16s ease,
+          background 0.16s ease,
+          box-shadow 0.16s ease;
+        overflow: hidden;
+      }
+      .cell:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.07);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+      .cell::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 255, 255, 0.08),
+          transparent 48%
+        );
+        opacity: 0.55;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .cell.active-turn {
+        box-shadow:
+          inset 0 0 0 1px rgba(125, 211, 252, 0.5),
+          0 0 0 2px rgba(125, 211, 252, 0.12);
+      }
+      .cell.error {
+        animation: shake 0.3s ease-in-out;
+        background: rgba(251, 113, 133, 0.15);
+        box-shadow: inset 0 0 0 1px rgba(251, 113, 133, 0.5);
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-4px);
+        }
+        75% {
+          transform: translateX(4px);
+        }
+      }
+
+      .piece {
+        position: absolute;
+        inset: 11%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        pointer-events: none;
+        transition:
+          transform 0.18s ease,
+          opacity 0.18s ease;
+        z-index: 2;
+        border-radius: 50%;
+      }
+      .piece.white.circle {
+        background: linear-gradient(180deg, #ffffff, #cfd8ff);
+        box-shadow: 0 0 18px var(--white-glow);
+      }
+      .piece.black.circle {
+        background: linear-gradient(180deg, #2b3442, #0d1118);
+        box-shadow: 0 0 18px var(--black-glow);
+      }
+      .piece.yugo {
+        inset: 8%;
+      }
+      .piece.yugo.white {
+        background: linear-gradient(180deg, #ffffff, #dbe5ff);
+        box-shadow: 0 0 24px rgba(248, 250, 255, 0.48);
+      }
+      .piece.yugo.black {
+        background: linear-gradient(180deg, #2b3442, #0a0e15);
+        box-shadow: 0 0 24px rgba(9, 12, 18, 0.5);
+      }
+      .piece .inner-dot {
+        position: absolute;
+        width: 18%;
+        height: 18%;
+        border-radius: 50%;
+        background: #ef4444;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
+      }
+
+      .piece .inner-dot.stack-2 {
+        border-radius: 999px;
+        width: 22%;
+        height: 14%;
+      }
+      .piece .inner-dot.stack-3 {
+        width: 20%;
+        height: 20%;
+        background: #ef4444;
+        box-shadow: none;
+        clip-path: polygon(50% 10%, 92% 88%, 8% 88%);
+      }
+      .piece .inner-dot.stack-4 {
+        border-radius: 8%;
+        width: 20%;
+        height: 20%;
+        box-shadow: none;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .piece.recent {
+        animation: pop 0.18s ease-out;
+      }
+      @keyframes pop {
+        from {
+          transform: scale(0.85);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+
+      .footer-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      button.action {
+        border: 0;
+        border-radius: 999px;
+        padding: 11px 16px;
+        font: inherit;
+        font-weight: 700;
+        color: #09101e;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        background: linear-gradient(135deg, #a5f3fc, #f9a8d4);
+        box-shadow: 0 12px 30px rgba(125, 211, 252, 0.18);
+      }
+      button.action.secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: none;
+      }
+      button.action:hover {
+        transform: translateY(-1px);
+      }
+      button.action.primary:hover {
+        box-shadow: 0 16px 40px rgba(125, 211, 252, 0.3);
+      }
+
+      .log {
+        min-height: 54px;
+        padding: 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: #dce6ff;
+        line-height: 1.45;
+        font-size: 0.95rem;
+      }
+
+      /* MODALS (Setup, Game Over, History Log) */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 9, 22, 0.85);
+        backdrop-filter: blur(12px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        transition:
+          opacity 0.3s ease,
+          visibility 0.3s;
+      }
+      .modal-backdrop.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .modal-box {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        width: 100%;
+        max-width: 420px;
+        padding: 40px 32px;
+        text-align: center;
+        border-radius: 28px;
+        transform: translateY(0) scale(1);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-backdrop.hidden .modal-box {
+        transform: translateY(20px) scale(0.95);
+      }
+      .modal-box h2 {
+        margin: 0 0 8px;
+        font-size: clamp(1.5rem, 5vw, 1.8rem);
+      }
+      .modal-box p {
+        color: var(--muted);
+        margin: 0 0 24px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      /* Setup inputs */
+      .input-group {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+      .input-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .player-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .input-group input {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        font: inherit;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.2s;
+      }
+      .input-group input:focus {
+        border-color: var(--accent);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.1);
+      }
+
+      /* Log Modal */
+      #logModalBox {
+        max-width: 500px;
+        max-height: 85svh;
+        padding: 32px 24px;
+      }
+      .modal-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-shrink: 0;
+      }
+      .modal-header-row h2 {
+        margin: 0;
+      }
+      .close-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border: 0;
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        transition: background 0.2s;
+      }
+      .close-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .history-list {
+        overflow-y: auto;
+        text-align: left;
+        padding-right: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+      }
+      .history-list::-webkit-scrollbar {
+        width: 6px;
+      }
+      .history-list::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
+      }
+      .history-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+      .history-item {
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 0.9rem;
+        color: #dce6ff;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .history-item .move-num {
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-top: 2px;
+        min-width: 20px;
+      }
+      .history-item.important {
+        background: rgba(125, 211, 252, 0.1);
+        border-color: rgba(125, 211, 252, 0.2);
+      }
+
+      .winner-text {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 2px 8px rgba(125, 211, 252, 0.2));
+      }
+
+      @media (max-width: 960px) {
+        .grid-layout {
+          grid-template-columns: 1fr;
+        }
+        .board-wrap {
+          order: -1;
+        }
+      }
+      @media (max-width: 640px) {
+        .panel {
+          border-radius: 20px;
+        }
+        .board {
+          padding: 10px;
+          gap: 4px;
+          inset: 10px 10px 24px 24px;
+        }
+        .cell {
+          border-radius: 12px;
+        }
+        .board-file-labels {
+          left: 24px;
+          right: 10px;
+          bottom: 4px;
+        }
+        .board-rank-labels {
+          left: 4px;
+          top: 10px;
+          bottom: 24px;
+        }
+        .coord-label {
+          font-size: 0.56rem;
+        }
+        .piece.yugo {
+          inset: 10%;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Name Input Modal -->
+    <div class="modal-backdrop" id="setupModal">
+      <div class="modal-box">
+        <h2>Player Setup</h2>
+        <p>Enter names before the match begins</p>
+
+        <div class="input-group">
+          <label for="p1Name">
+            <span
+              class="player-dot"
+              style="
+                background: var(--white);
+                box-shadow: 0 0 8px var(--white-glow);
+              "
+            ></span>
+            Player 1 (White)
+          </label>
+          <input
+            type="text"
+            id="p1Name"
+            placeholder="Enter Name"
+            value="Player 1"
+            autocomplete="off"
+            maxlength="15"
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="p2Name">
+            <span
+              class="player-dot"
+              style="
+                background: var(--black);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+              "
+            ></span>
+            Player 2 (Black)
+          </label>
+          <input
+            type="text"
+            id="p2Name"
+            placeholder="Enter Name"
+            value="Player 2"
+            autocomplete="off"
+            maxlength="15"
+          />
+        </div>
+
+        <button
+          class="action primary"
+          id="startGameBtn"
+          style="
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1rem;
+            margin-top: 10px;
+          "
+        >
+          Start Game
+        </button>
+      </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal-backdrop hidden" id="gameOverModal">
+      <div class="modal-box">
+        <h2
+          id="goTitle"
+          class="winner-text"
+          style="font-size: 2.2rem; margin-bottom: 4px"
+        >
+          Game Over
+        </h2>
+        <p id="goSubtitle" style="font-size: 1.1rem; color: #fff">
+          Player 1 Wins by Igo!
+        </p>
+
+        <div class="stats" style="margin-bottom: 24px; margin-top: 10px">
+          <div class="stat">
+            <span class="label" id="goP1Label">P1 Points</span>
+            <span id="goP1Score" class="value">0</span>
+          </div>
+          <div class="stat">
+            <span class="label" id="goP2Label">P2 Points</span>
+            <span id="goP2Score" class="value">0</span>
+          </div>
+        </div>
+
+        <button
+          class="action primary"
+          id="playAgainBtn"
+          style="width: 100%; padding: 14px; font-size: 1.1rem"
+        >
+          Play Again
+        </button>
+        <button
+          class="action secondary"
+          id="closeGameOverBtn"
+          style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 10px"
+        >
+          View Final Board
+        </button>
+      </div>
+    </div>
+
+    <!-- Move History Log Modal -->
+    <div class="modal-backdrop hidden" id="logModal">
+      <div class="modal-box" id="logModalBox">
+        <div class="modal-header-row">
+          <h2>Move History</h2>
+          <button class="close-btn" id="closeLogBtn">&times;</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="shell">
+      <div class="hero">
+        <div class="title-block">
+          <h1>Migoyugo</h1>
+          <p>
+            Place a Migo to start connecting. 4 in a row makes a Yugo. Form an
+            Igo (4 Yugos in a line) to win instantly.
+          </p>
+        </div>
+        <div class="chip-row">
+          <a
+            href="index.html"
+            class="chip"
+            style="
+              text-decoration: none;
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span>&larr;</span> Main Menu
+          </a>
+          <div class="chip">Hot-seat multiplayer</div>
+        </div>
+      </div>
+
+      <div class="grid-layout">
+        <section class="panel side">
+          <div class="status-card">
+            <p class="status-label">Current Turn</p>
+            <div class="turn-banner">
+              <div>
+                <div id="turnName" class="turn-name">Player 1</div>
+                <div
+                  id="turnHint"
+                  style="
+                    color: var(--muted);
+                    margin-top: 4px;
+                    font-size: 0.9rem;
+                  "
+                >
+                  Place a white Migo.
+                </div>
+              </div>
+              <div id="turnDot" class="turn-dot white"></div>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <span class="label" id="labelWhitePoints">P1 Points</span>
+              <span id="scoreWhite" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label" id="labelBlackPoints">P2 Points</span>
+              <span id="scoreBlack" class="value">0</span>
+            </div>
+          </div>
+
+          <div class="log" id="log" style="color: var(--accent-2)">
+            Awaiting players...
+          </div>
+
+          <div class="actions">
+            <button class="action secondary" id="viewLogBtn" type="button">
+              Move Log
+            </button>
+            <button class="action" id="restartBtn" type="button">
+              Reset Board
+            </button>
+          </div>
+        </section>
+
+        <section class="panel board-wrap">
+          <div class="board-shell">
+            <div
+              id="boardRankLabels"
+              class="board-rank-labels"
+              aria-hidden="true"
+            ></div>
+            <div id="board" class="board" aria-label="Migoyugo board"></div>
+            <div
+              id="boardFileLabels"
+              class="board-file-labels"
+              aria-hidden="true"
+            ></div>
+          </div>
+          <div class="footer-row">
+            <div>Tap or click a square to place a piece.</div>
+            <div>Same device, alternating turns.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const size = 8;
+      const boardElement = document.getElementById("board");
+      const boardFileLabelsElement = document.getElementById("boardFileLabels");
+      const boardRankLabelsElement = document.getElementById("boardRankLabels");
+      const turnNameElement = document.getElementById("turnName");
+      const turnHintElement = document.getElementById("turnHint");
+      const turnDotElement = document.getElementById("turnDot");
+      const scoreWhiteElement = document.getElementById("scoreWhite");
+      const scoreBlackElement = document.getElementById("scoreBlack");
+      const labelWhitePoints = document.getElementById("labelWhitePoints");
+      const labelBlackPoints = document.getElementById("labelBlackPoints");
+      const logElement = document.getElementById("log");
+
+      const restartBtn = document.getElementById("restartBtn");
+
+      // Modal Elements
+      const setupModal = document.getElementById("setupModal");
+      const p1NameInput = document.getElementById("p1Name");
+      const p2NameInput = document.getElementById("p2Name");
+      const startGameBtn = document.getElementById("startGameBtn");
+
+      const gameOverModal = document.getElementById("gameOverModal");
+      const goTitle = document.getElementById("goTitle");
+      const goSubtitle = document.getElementById("goSubtitle");
+      const goP1Label = document.getElementById("goP1Label");
+      const goP2Label = document.getElementById("goP2Label");
+      const goP1Score = document.getElementById("goP1Score");
+      const goP2Score = document.getElementById("goP2Score");
+      const playAgainBtn = document.getElementById("playAgainBtn");
+      const closeGameOverBtn = document.getElementById("closeGameOverBtn");
+
+      const logModal = document.getElementById("logModal");
+      const viewLogBtn = document.getElementById("viewLogBtn");
+      const closeLogBtn = document.getElementById("closeLogBtn");
+      const historyList = document.getElementById("historyList");
+
+      const players = {
+        1: { name: "Player 1", color: "white", label: "white" },
+        2: { name: "Player 2", color: "black", label: "black" },
+      };
+
+      const state = {
+        board: createEmptyBoard(),
+        turn: 1,
+        gameOver: false,
+        winner: null,
+        gameStarted: false,
+        moveHistory: [],
+        moveCount: 0,
+      };
+
+      // --- Modal Listeners ---
+      startGameBtn.addEventListener("click", () => {
+        const p1 = p1NameInput.value.trim() || "Player 1";
+        const p2 = p2NameInput.value.trim() || "Player 2";
+
+        players[1].name = p1;
+        players[2].name = p2;
+
+        labelWhitePoints.textContent = `${p1} (Wego)`;
+        labelBlackPoints.textContent = `${p2} (Wego)`;
+
+        setupModal.classList.add("hidden");
+        state.gameStarted = true;
+
+        resetGame();
+      });
+
+      [p1NameInput, p2NameInput].forEach((input) => {
+        input.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") startGameBtn.click();
+        });
+      });
+
+      playAgainBtn.addEventListener("click", () => {
+        gameOverModal.classList.add("hidden");
+        resetGame();
+      });
+
+      closeGameOverBtn.addEventListener("click", () => {
+        gameOverModal.classList.add("hidden");
+      });
+
+      viewLogBtn.addEventListener("click", () => {
+        renderHistoryList();
+        logModal.classList.remove("hidden");
+      });
+
+      closeLogBtn.addEventListener("click", () =>
+        logModal.classList.add("hidden"),
+      );
+      logModal.addEventListener("click", (e) => {
+        if (e.target === logModal) logModal.classList.add("hidden");
+      });
+
+      // --- System Logging ---
+      function pushLog(message, isImportant = false) {
+        logElement.textContent = message;
+
+        // Highlight error text dynamically
+        if (message.includes("Invalid")) {
+          logElement.style.color = "var(--danger)";
+        } else {
+          logElement.style.color = "#dce6ff";
+        }
+
+        if (!message.includes("Invalid") && !message.includes("occupied")) {
+          if (!isImportant) state.moveCount++;
+          state.moveHistory.push({
+            num: isImportant ? "" : state.moveCount,
+            text: message,
+            important: isImportant,
+          });
+        }
+      }
+
+      function renderHistoryList() {
+        historyList.innerHTML = "";
+        if (state.moveHistory.length === 0) {
+          historyList.innerHTML = `<div style="color: var(--muted); text-align: center; padding: 20px;">No moves made yet.</div>`;
+          return;
+        }
+
+        state.moveHistory.forEach((entry) => {
+          const item = document.createElement("div");
+          item.className = `history-item ${entry.important ? "important" : ""}`;
+
+          const numSpan = document.createElement("span");
+          numSpan.className = "move-num";
+          numSpan.textContent = entry.num ? `${entry.num}.` : "✦";
+
+          const textSpan = document.createElement("span");
+          textSpan.textContent = entry.text;
+
+          item.appendChild(numSpan);
+          item.appendChild(textSpan);
+          historyList.appendChild(item);
+        });
+        historyList.scrollTop = historyList.scrollHeight;
+      }
+
+      function showGameOver(winnerId, subtitleMsg) {
+        if (winnerId === null) {
+          goTitle.textContent = "Draw!";
+          goTitle.style.background = "var(--text)";
+          goTitle.style.webkitTextFillColor = "var(--text)";
+        } else {
+          goTitle.textContent = `${players[winnerId].name} Wins!`;
+          goTitle.style.background =
+            "linear-gradient(135deg, var(--accent), var(--accent-2))";
+          goTitle.style.webkitTextFillColor = "transparent";
+        }
+
+        goSubtitle.textContent = subtitleMsg;
+
+        goP1Label.textContent = `${players[1].name} Points`;
+        goP2Label.textContent = `${players[2].name} Points`;
+        goP1Score.textContent = countPlayerPoints(1);
+        goP2Score.textContent = countPlayerPoints(2);
+
+        gameOverModal.classList.remove("hidden");
+      }
+
+      // --- Game Logic ---
+      function createEmptyBoard() {
+        return Array.from({ length: size }, () =>
+          Array.from({ length: size }, () => null),
+        );
+      }
+
+      function buildBoardEdgeLabels() {
+        boardFileLabelsElement.innerHTML = "";
+        boardRankLabelsElement.innerHTML = "";
+        for (let col = 0; col < size; col += 1) {
+          const fileLabel = document.createElement("span");
+          fileLabel.className = "coord-label";
+          fileLabel.textContent = String.fromCharCode(97 + col);
+          boardFileLabelsElement.appendChild(fileLabel);
+        }
+        for (let row = 0; row < size; row += 1) {
+          const rankLabel = document.createElement("span");
+          rankLabel.className = "coord-label";
+          rankLabel.textContent = String(row + 1);
+          boardRankLabelsElement.appendChild(rankLabel);
+        }
+      }
+
+      function buildBoard() {
+        boardElement.innerHTML = "";
+        buildBoardEdgeLabels();
+        for (let row = 0; row < size; row += 1) {
+          for (let col = 0; col < size; col += 1) {
+            const cell = document.createElement("button");
+            cell.type = "button";
+            cell.className = "cell";
+            cell.dataset.row = String(row);
+            cell.dataset.col = String(col);
+            cell.setAttribute("aria-label", `Row ${row + 1} Column ${col + 1}`);
+            cell.addEventListener("click", onCellClick);
+            boardElement.appendChild(cell);
+          }
+        }
+      }
+
+      function onCellClick(event) {
+        if (!state.gameStarted) return;
+        if (state.gameOver) {
+          gameOverModal.classList.remove("hidden");
+          return;
+        }
+
+        const cell = event.currentTarget;
+        const row = Number(cell.dataset.row);
+        const col = Number(cell.dataset.col);
+
+        if (state.board[row][col]) {
+          pushLog("That square is already occupied.");
+          cell.classList.add("error");
+          setTimeout(() => cell.classList.remove("error"), 300);
+          return;
+        }
+
+        // NO LONG LINES VALIDATION
+        if (wouldCreateLongLine(row, col, state.turn)) {
+          pushLog(
+            "Invalid Move: You cannot create a line of more than 4 pieces.",
+          );
+          cell.classList.add("error");
+          setTimeout(() => cell.classList.remove("error"), 300);
+          return;
+        }
+
+        placeTile(row, col);
+      }
+
+      function placeTile(row, col) {
+        const player = state.turn;
+        state.board[row][col] = { player, yugo: false };
+        pushLog(
+          `${players[player].name} placed a Migo at ${cellName(row, col)}.`,
+        );
+
+        const lines = findAllStraightLines(row, col, player);
+        if (lines.length > 0) {
+          formYugo(lines, player, { row, col });
+          pushLog(
+            `${players[player].name} formed a Yugo at ${cellName(row, col)}!`,
+            true,
+          );
+        }
+
+        if (checkIgo(player)) {
+          state.gameOver = true;
+          state.winner = player;
+          pushLog(`${players[player].name} wins by Igo!`, true);
+          render();
+          setTimeout(
+            () =>
+              showGameOver(
+                player,
+                `Won by ${players[player].name} (4 Yugos in a line)!`,
+              ),
+            300,
+          );
+          return;
+        }
+
+        // Switch turn
+        state.turn = state.turn === 1 ? 2 : 1;
+
+        // Check Wego Triggers: Board full OR No Legal Moves left for the new player
+        const boardFull = isBoardFull();
+        const noMoves = !hasLegalMoves(state.turn);
+
+        if (boardFull || noMoves) {
+          state.gameOver = true;
+          const reason = boardFull
+            ? "Wego (Board Full)"
+            : "Wego (No Legal Moves)";
+          const result = evaluateWego(reason);
+          state.winner = result.winner;
+          pushLog(result.message, true);
+          render();
+          setTimeout(() => showGameOver(result.winner, result.message), 300);
+          return;
+        }
+
+        render();
+      }
+
+      function inBounds(row, col) {
+        return row >= 0 && row < size && col >= 0 && col < size;
+      }
+      function isPlayerCell(row, col, player) {
+        const tile = state.board[row][col];
+        return tile && tile.player === player;
+      }
+      function cellName(row, col) {
+        return `${String.fromCharCode(65 + col)}${row + 1}`;
+      }
+
+      // CHECKS FOR > 4 IN A ROW
+      function wouldCreateLongLine(row, col, player) {
+        const directions = [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, -1],
+        ];
+
+        for (const [dr, dc] of directions) {
+          let count = 1; // 1 for the piece we are about to place
+
+          // Walk forward
+          let r = row - dr;
+          let c = col - dc;
+          while (inBounds(r, c) && isPlayerCell(r, c, player)) {
+            count++;
+            r -= dr;
+            c -= dc;
+          }
+
+          // Walk backward
+          r = row + dr;
+          c = col + dc;
+          while (inBounds(r, c) && isPlayerCell(r, c, player)) {
+            count++;
+            r += dr;
+            c += dc;
+          }
+
+          if (count > 4) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // CHECKS IF NEXT PLAYER IS BLOCKED
+      function hasLegalMoves(player) {
+        for (let r = 0; r < size; r++) {
+          for (let c = 0; c < size; c++) {
+            if (!state.board[r][c]) {
+              // if empty
+              if (!wouldCreateLongLine(r, c, player)) {
+                return true; // found at least one legal move
+              }
+            }
+          }
+        }
+        return false; // Trapped!
+      }
+
+      // FINDS EXACTLY 4 IN A ROW
+      function findAllStraightLines(row, col, player) {
+        const directions = [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, -1],
+        ];
+        const validLines = [];
+
+        for (const [dr, dc] of directions) {
+          const cells = [[row, col]];
+          let currentRow = row - dr;
+          let currentCol = col - dc;
+          while (
+            inBounds(currentRow, currentCol) &&
+            isPlayerCell(currentRow, currentCol, player)
+          ) {
+            cells.unshift([currentRow, currentCol]);
+            currentRow -= dr;
+            currentCol -= dc;
+          }
+          currentRow = row + dr;
+          currentCol = col + dc;
+          while (
+            inBounds(currentRow, currentCol) &&
+            isPlayerCell(currentRow, currentCol, player)
+          ) {
+            cells.push([currentRow, currentCol]);
+            currentRow += dr;
+            currentCol += dc;
+          }
+
+          if (cells.length === 4) {
+            validLines.push(cells);
+          }
+        }
+        return validLines;
+      }
+
+      function formYugo(lines, player, anchor) {
+        const tilesToRemove = new Set();
+        for (const line of lines) {
+          for (const [row, col] of line) {
+            tilesToRemove.add(`${row}:${col}`);
+          }
+        }
+        for (const key of tilesToRemove) {
+          const [row, col] = key.split(":").map(Number);
+          const tile = state.board[row][col];
+          if (tile && !tile.yugo) {
+            state.board[row][col] = null;
+          }
+        }
+        state.board[anchor.row][anchor.col] = {
+          player,
+          yugo: true,
+          stacks: lines.length,
+        };
+      }
+
+      function checkIgo(player) {
+        const yugos = [];
+        for (let row = 0; row < size; row += 1) {
+          for (let col = 0; col < size; col += 1) {
+            if (
+              state.board[row][col] &&
+              state.board[row][col].player === player &&
+              state.board[row][col].yugo
+            ) {
+              yugos.push([row, col]);
+            }
+          }
+        }
+        const yugoSet = new Set(yugos.map(([row, col]) => `${row}:${col}`));
+
+        for (const [row, col] of yugos) {
+          for (const [dr, dc] of [
+            [0, 1],
+            [1, 0],
+            [1, 1],
+            [1, -1],
+          ]) {
+            let count = 1;
+            for (let step = 1; step < 4; step += 1) {
+              if (yugoSet.has(`${row + dr * step}:${col + dc * step}`))
+                count += 1;
+              else break;
+            }
+            if (count >= 4) return true;
+          }
+        }
+        return false;
+      }
+
+      function isBoardFull() {
+        for (let row = 0; row < size; row += 1) {
+          for (let col = 0; col < size; col += 1) {
+            if (!state.board[row][col]) return false;
+          }
+        }
+        return true;
+      }
+
+      function evaluateWego(reasonMessage) {
+        const white = countPlayerPoints(1);
+        const black = countPlayerPoints(2);
+
+        if (white === black) {
+          return {
+            winner: null,
+            message: `Draw by ${reasonMessage}: Both have ${white} points.`,
+          };
+        }
+        const winner = white > black ? 1 : 2;
+        return {
+          winner,
+          message: `Won by ${reasonMessage} (${Math.max(white, black)} to ${Math.min(white, black)})`,
+        };
+      }
+
+      function render() {
+        const cells = boardElement.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          const row = Number(cell.dataset.row);
+          const col = Number(cell.dataset.col);
+          const tile = state.board[row][col];
+
+          cell.innerHTML = "";
+          cell.classList.toggle(
+            "active-turn",
+            !state.gameOver && !tile && state.gameStarted,
+          );
+
+          if (!tile) return;
+
+          const piece = document.createElement("div");
+          const colorClass = tile.player === 1 ? "white" : "black";
+          piece.className = `piece ${colorClass} circle recent${tile.yugo ? " yugo" : ""}`;
+
+          if (tile.yugo) {
+            piece.classList.add("yugo");
+            const dot = document.createElement("div");
+            const stacks = tile.stacks || 1;
+            dot.className = `inner-dot${stacks >= 2 ? ` stack-${stacks}` : ""}`;
+            piece.appendChild(dot);
+          }
+
+          cell.appendChild(piece);
+          requestAnimationFrame(() => piece.classList.remove("recent"));
+        });
+
+        scoreWhiteElement.textContent = String(countPlayerPoints(1));
+        scoreBlackElement.textContent = String(countPlayerPoints(2));
+
+        const current = players[state.turn];
+        turnNameElement.textContent = current.name;
+        turnHintElement.textContent = state.gameOver
+          ? state.winner
+            ? `${players[state.winner].name} has won.`
+            : "Board finished. Draw."
+          : `Place a ${current.color} Migo anywhere open.`;
+        turnDotElement.className = `turn-dot ${current.color}`;
+
+        restartBtn.disabled = !state.gameStarted;
+      }
+
+      function resetGame() {
+        state.board = createEmptyBoard();
+        state.turn = 1;
+        state.gameOver = false;
+        state.winner = null;
+        state.moveHistory = [];
+        state.moveCount = 0;
+
+        pushLog(`${players[1].name} goes first. Place a Migo to begin.`, true);
+        render();
+      }
+
+      function countPlayerPoints(player) {
+        let total = 0;
+        for (let row = 0; row < size; row += 1) {
+          for (let col = 0; col < size; col += 1) {
+            const tile = state.board[row][col];
+            if (tile && tile.player === player && tile.yugo) {
+              total += tile.stacks || 1;
+            }
+          }
+        }
+        return total;
+      }
+
+      restartBtn.addEventListener("click", resetGame);
+
+      // Initialize board underneath the modal
+      buildBoard();
+      render();
+    </script>
+  </body>
 </html>
