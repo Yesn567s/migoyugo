@@ -115,6 +115,16 @@
         color: var(--text);
         font-size: 0.85rem;
       }
+      .menu-link {
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      .menu-link:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(125, 211, 252, 0.15);
+      }
       .grid-layout {
         display: grid;
         grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
@@ -991,7 +1001,7 @@
           </div>
           <div class="footer-row">
             <div>Tap or click a square to place a piece.</div>
-            <div>Same device, alternating turns.</div>
+            <!-- <div>Same device, alternating turns.</div> -->
           </div>
         </section>
       </div>
@@ -1044,6 +1054,13 @@
         1: { name: "Player 1", color: "white", label: "white" },
         2: { name: "Player 2", color: "black", label: "black" },
       };
+
+      // --- Sound Effects ---
+      function playSound(filename) {
+        const audio = new Audio(`sfx/${filename}`);
+        audio.volume = 0.3; // 30% volume
+        audio.play().catch((e) => console.log("Sound play error:", e));
+      }
 
       const state = {
         board: createEmptyBoard(),
@@ -1246,6 +1263,9 @@
           `${players[player].name} placed a Migo at ${cellName(row, col)}.`,
         );
 
+        // Play migo placement sound based on color
+        playSound(`${players[player].color}.mp3`);
+
         const lines = findAllStraightLines(row, col, player);
         if (lines.length > 0) {
           formYugo(lines, player, { row, col });
@@ -1253,6 +1273,9 @@
             `${players[player].name} formed a Yugo at ${cellName(row, col)}!`,
             true,
           );
+
+          // Play yugo formation sound
+          playSound("form.mp3");
 
           // Animate yugo formation on all affected cells
           setTimeout(() => {
@@ -1284,6 +1307,10 @@
           state.gameOver = true;
           state.winner = player;
           pushLog(`${players[player].name} wins by Igo!`, true);
+
+          // Play yugo formation sound for Igo
+          playSound("form.mp3");
+
           render();
 
           // Animate Igo winning pieces
