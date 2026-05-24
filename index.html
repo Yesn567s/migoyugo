@@ -391,9 +391,9 @@
 
         <div class="menu-actions">
           <a href="migoyugo.html" class="action primary">Play Local 2-Player</a>
-          <button class="action secondary" disabled>
-            Play Against AI (Soon)
-          </button>
+          <a href="ai_game.html" class="action secondary" id="btnPlayAI">
+            Play Against AI
+          </a>
           <button class="action secondary" id="btnRules">How to Play</button>
         </div>
 
@@ -507,6 +507,7 @@
       const btnCloseRules = document.getElementById("btnCloseRules");
       const rulesModal = document.getElementById("rulesModal");
       const playButton = document.querySelector('a[href="migoyugo.html"]');
+      const playAIButton = document.querySelector('a[href="ai_game.html"]');
       const loadingScreen = document.getElementById("loadingScreen");
 
       function openModal() {
@@ -529,14 +530,19 @@
       });
 
       // Fade out animation before navigation
-      playButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        loadingScreen.classList.add("active");
-        document.body.classList.add("fade-out");
-        setTimeout(() => {
-          window.location.href = "migoyugo.html";
-        }, 600);
-      });
+      function addNavigation(button, href) {
+        button.addEventListener("click", (e) => {
+          e.preventDefault();
+          loadingScreen.classList.add("active");
+          document.body.classList.add("fade-out");
+          setTimeout(() => {
+            window.location.href = href;
+          }, 600);
+        });
+      }
+
+      addNavigation(playButton, "migoyugo.html");
+      addNavigation(playAIButton, "ai_game.html");
     </script>
   </body>
 </html>
