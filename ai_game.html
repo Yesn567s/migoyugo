@@ -235,7 +235,7 @@
 
       // Sound Effects
       function playSound(filename) {
-        const audio = new Audio(`sfx/${filename}`);
+        const audio = new Audio(`assets/sfx/${filename}`);
         audio.volume = 0.3;
         audio.play().catch((e) => console.log("Sound play error:", e));
       }
