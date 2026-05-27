@@ -273,6 +273,11 @@
         state.gameStarted = true;
 
         resetGame();
+
+        // If AI is white (moves first), trigger AI move
+        if (state.turn !== playerColor) {
+          setTimeout(makeAIMove, 800);
+        }
       });
 
       playerNameInput.addEventListener("keypress", (e) => {
