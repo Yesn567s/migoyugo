@@ -39,6 +39,18 @@
           />
         </div>
 
+        <div class="input-group">
+          <label for="aiMaxDepth">AI Max Depth</label>
+          <input
+            type="number"
+            id="aiMaxDepth"
+            min="1"
+            max="15"
+            step="1"
+            value="4"
+          />
+        </div>
+
         <button
           class="action"
           style="width: 100%; padding: 14px; font-size: 1.1rem"
@@ -209,6 +221,7 @@
       );
       const colorButtons = document.querySelectorAll(".color-button");
       const playerNameInput = document.getElementById("playerName");
+      const aiMaxDepthInput = document.getElementById("aiMaxDepth");
       const startGameBtn = document.getElementById("startGameBtn");
       const colorWhiteBtn = document.getElementById("colorWhite");
       const colorBlackBtn = document.getElementById("colorBlack");
@@ -228,6 +241,7 @@
       const historyList = document.getElementById("historyList");
 
       let playerColor = 1; // 1 = white, 2 = black
+      let aiMaxDepth = 4;
       const players = {
         1: { name: "Player", color: "white", label: "white" },
         2: { name: "AI", color: "black", label: "black" },
@@ -262,6 +276,10 @@
 
       startGameBtn.addEventListener("click", () => {
         const name = playerNameInput.value.trim() || "Player";
+        const depthValue = Number.parseInt(aiMaxDepthInput.value, 10);
+        aiMaxDepth = Number.isFinite(depthValue)
+          ? Math.min(6, Math.max(1, depthValue))
+          : 4;
         players[playerColor].name = name;
         const aiColor = playerColor === 1 ? 2 : 1;
         players[aiColor].name = "AI";
@@ -734,6 +752,7 @@
           board: state.board,
           playerColor: playerColor,
           turn: state.turn,
+          maxDepth: aiMaxDepth,
         });
       }
 
