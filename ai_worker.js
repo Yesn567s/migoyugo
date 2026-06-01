@@ -2,7 +2,32 @@
 const size = 8;
 const MAX_DEPTH = 4;
 
+// --- NEW: THE MEMORY BANK ---
+const ttMap = new Map();
+
+function hashBoard(board) {
+  let str = "";
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const t = board[r][c];
+      // Converts the board into a fast 64-character string ID
+      str += t
+        ? t.player === 1
+          ? t.yugo
+            ? "3"
+            : "1"
+          : t.yugo
+            ? "4"
+            : "2"
+        : "0";
+    }
+  }
+  return str;
+}
+// -----------------------------
+
 self.onmessage = function (e) {
+  ttMap.clear();
   const { board, playerColor, turn, maxDepth } = e.data;
   const searchMaxDepth = Number.isFinite(maxDepth) ? maxDepth : MAX_DEPTH;
 
@@ -26,7 +51,7 @@ self.onmessage = function (e) {
   let bestScore = -Infinity;
 
   const rootUrgentBlockCells = getUrgentBlockCells(board, other(turn));
-  const rootMaxMoves = searchMaxDepth <= 1 ? 10 : searchMaxDepth === 2 ? 8 : 6;
+  const rootMaxMoves = 25;
   const rootMoves =
     rootUrgentBlockCells.size > 0
       ? legalMoves.filter((move) =>
@@ -74,27 +99,33 @@ function minimax(
 ) {
   const aiPlayer = playerColor === 1 ? 2 : 1;
 
-  // Terminal states
-  if (checkIgoOnBoard(board, aiPlayer)) {
-    return 10000 - depth; // AI wins
-  }
-  if (checkIgoOnBoard(board, playerColor)) {
-    return -10000 + depth; // Player wins
+  // --- 1. CHECK THE TRANSPOSITION TABLE ---
+  const hash = hashBoard(board);
+  const remainingDepth = maxDepth - depth;
+
+  if (ttMap.has(hash)) {
+    const stored = ttMap.get(hash);
+    // Only use the stored memory if we searched deep enough last time
+    if (stored.remainingDepth >= remainingDepth) {
+      if (stored.flag === "EXACT") return stored.score;
+      if (stored.flag === "LOWERBOUND") alpha = Math.max(alpha, stored.score);
+      if (stored.flag === "UPPERBOUND") beta = Math.min(beta, stored.score);
+      if (alpha >= beta) return stored.score;
+    }
   }
 
-  if (isBoardFullOnBoard(board)) {
+  // --- 2. TERMINAL STATES ---
+  if (checkIgoOnBoard(board, aiPlayer)) return 10000 - depth;
+  if (checkIgoOnBoard(board, playerColor)) return -10000 + depth;
+  if (
+    isBoardFullOnBoard(board) ||
+    !hasLegalMovesOnBoard(board, player) ||
+    depth >= maxDepth
+  ) {
     return evaluate(board, aiPlayer);
   }
 
-  if (!hasLegalMovesOnBoard(board, player)) {
-    return evaluate(board, aiPlayer);
-  }
-
-  // Depth limit
-  if (depth >= maxDepth) {
-    return evaluate(board, aiPlayer);
-  }
-
+  // --- 3. GENERATE & SORT MOVES ---
   const legalMoves = [];
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
@@ -109,7 +140,8 @@ function minimax(
       moveOrderScore(board, b, player) - moveOrderScore(board, a, player),
   );
 
-  const maxMoves = depth <= 1 ? 10 : depth === 2 ? 8 : 6;
+  // Note: These limits are widened so the AI isn't wearing horse blinders
+  const maxMoves = depth <= 1 ? 25 : depth === 2 ? 20 : 15;
   const urgentBlockCells = getUrgentBlockCells(board, other(player));
   const urgentMoves =
     urgentBlockCells.size > 0
@@ -122,16 +154,28 @@ function minimax(
       ? urgentMoves.slice(0, Math.min(maxMoves, urgentMoves.length))
       : legalMoves.slice(0, Math.min(maxMoves, legalMoves.length));
 
+  // --- 4. THE SEARCH LOOP ---
+  let originalAlpha = alpha;
+  let bestScore;
+
   if (isMaximizing) {
     let maxEval = -Infinity;
     for (const move of movesToExplore) {
       const newBoard = cloneBoard(board);
+      const preMoveYugos = countYugosOnBoard(board, player); // Check how many Yugos exist
+
       simulateMove(newBoard, move.row, move.col, player);
+
+      const postMoveYugos = countYugosOnBoard(newBoard, player); // Check if we made a new one
       const nextPlayer = player === 1 ? 2 : 1;
+
+      // THE HORIZON FIX: If we formed a Yugo, don't increase the depth counter!
+      const nextDepth = postMoveYugos > preMoveYugos ? depth : depth + 1;
+
       const moveScore = minimax(
         newBoard,
         nextPlayer,
-        depth + 1,
+        nextDepth,
         alpha,
         beta,
         false,
@@ -142,17 +186,25 @@ function minimax(
       alpha = Math.max(alpha, moveScore);
       if (beta <= alpha) break;
     }
-    return maxEval;
+    bestScore = maxEval;
   } else {
     let minEval = Infinity;
     for (const move of movesToExplore) {
       const newBoard = cloneBoard(board);
+      const preMoveYugos = countYugosOnBoard(board, player);
+
       simulateMove(newBoard, move.row, move.col, player);
+
+      const postMoveYugos = countYugosOnBoard(newBoard, player);
       const nextPlayer = player === 1 ? 2 : 1;
+
+      // THE HORIZON FIX: Give the opponent the same courtesy extension
+      const nextDepth = postMoveYugos > preMoveYugos ? depth : depth + 1;
+
       const moveScore = minimax(
         newBoard,
         nextPlayer,
-        depth + 1,
+        nextDepth,
         alpha,
         beta,
         true,
@@ -163,8 +215,21 @@ function minimax(
       beta = Math.min(beta, moveScore);
       if (beta <= alpha) break;
     }
-    return minEval;
+    bestScore = minEval;
   }
+
+  // --- 5. SAVE TO TRANSPOSITION TABLE ---
+  let flag = "EXACT";
+  if (bestScore <= originalAlpha) flag = "UPPERBOUND";
+  else if (bestScore >= beta) flag = "LOWERBOUND";
+
+  ttMap.set(hash, {
+    score: bestScore,
+    remainingDepth: remainingDepth,
+    flag: flag,
+  });
+
+  return bestScore;
 }
 
 function simulateMove(board, row, col, player) {
@@ -619,13 +684,15 @@ function tacticalMoveBonus(board, move, player, opponent) {
 
       if (invalid || !moveIsInWindow) continue;
 
-      if (playerYugos === 3 && empties === 1) score += 6500;
-      if (playerMigos === 3 && empties === 1) score += 3200;
-      if (playerMigos === 2 && empties === 2) score += 1100;
+      // --- AI'S OFFENSIVE SORTING ---
+      const totalPlayerPieces = playerYugos + playerMigos;
+      if (totalPlayerPieces === 3 && empties === 1) score += 6500;
+      if (totalPlayerPieces === 2 && empties === 2) score += 1100;
 
-      if (opponentYugos === 3 && empties === 1) score += 9000;
-      if (opponentMigos === 3 && empties === 1) score += 7000;
-      if (opponentMigos === 2 && empties === 2) score += 1800;
+      // --- OPPONENT'S DEFENSIVE SORTING ---
+      const totalOpponentPieces = opponentYugos + opponentMigos;
+      if (totalOpponentPieces === 3 && empties === 1) score += 9000;
+      if (totalOpponentPieces === 2 && empties === 1) score += 5000;
     }
   }
 
@@ -678,7 +745,7 @@ function getUrgentBlockCells(board, threatenedPlayer) {
         }
 
         if (invalid || empties !== 1 || !emptyCell) continue;
-        if (oppYugos === 3 || oppMigos === 3) {
+        if (oppYugos + oppMigos === 3) {
           urgentCells.add(`${emptyCell[0]}:${emptyCell[1]}`);
         }
       }
@@ -688,265 +755,162 @@ function getUrgentBlockCells(board, threatenedPlayer) {
   return urgentCells;
 }
 
-function evaluate(board, player) {
-  const opponent = other(player);
-  const stats = collectHeuristicStats(board);
+// ==========================================
+// THE NEW MASTER EVALUATOR
+// ==========================================
+function evaluate(board, aiPlayer) {
+  const humanPlayer = other(aiPlayer);
+  let totalScore = 0;
 
-  const playerPrefix = player === 1 ? "p1" : "p2";
-  const opponentPrefix = opponent === 1 ? "p1" : "p2";
+  // --- 1. YUGO ECONOMY ---
+  let myYugos = countYugosOnBoard(board, aiPlayer);
+  let oppYugos = countYugosOnBoard(board, humanPlayer);
+  totalScore += myYugos * 10000;
+  totalScore -= oppYugos * 12000;
 
+  // --- 2. STRING PATTERN SCANNING (The Brains) ---
+  // We extract all lines into strings to detect Misdirections, Sandwiches, and Traps
+  let allLines = extractAllLinesAsStrings(board, aiPlayer, humanPlayer);
+
+  for (let lineStr of allLines) {
+    totalScore += evaluateLineString(lineStr);
+  }
+
+  // --- 3. HEATMAP ---
+  totalScore += calculateHeatmap(board, aiPlayer);
+  totalScore -= calculateHeatmap(board, humanPlayer);
+
+  return totalScore;
+}
+
+// ==========================================
+// STRING EXTRACTOR (Converts the 2D Board into text)
+// ==========================================
+function extractAllLinesAsStrings(board, aiPlayer, humanPlayer) {
+  const lines = [];
+
+  // Helper to map your objects to string characters:
+  // "0" = Empty | "1" = AI Migo | "3" = AI Yugo | "2" = Human Migo | "4" = Human Yugo
+  function tileChar(r, c) {
+    const tile = board[r][c];
+    if (!tile) return "0";
+    if (tile.player === aiPlayer) return tile.yugo ? "3" : "1";
+    if (tile.player === humanPlayer) return tile.yugo ? "4" : "2";
+    return "0";
+  }
+
+  // Extract Rows
+  for (let r = 0; r < size; r++) {
+    let rowStr = "";
+    for (let c = 0; c < size; c++) rowStr += tileChar(r, c);
+    lines.push(rowStr);
+  }
+
+  // Extract Columns
+  for (let c = 0; c < size; c++) {
+    let colStr = "";
+    for (let r = 0; r < size; r++) colStr += tileChar(r, c);
+    lines.push(colStr);
+  }
+
+  // Extract Diagonals (Top-left to Bottom-right)
+  for (let d = -(size - 4); d <= size - 4; d++) {
+    let diagStr = "";
+    for (let r = 0; r < size; r++) {
+      let c = r - d;
+      if (c >= 0 && c < size) diagStr += tileChar(r, c);
+    }
+    if (diagStr.length >= 4) lines.push(diagStr);
+  }
+
+  // Extract Diagonals (Top-right to Bottom-left)
+  for (let d = 3; d <= size * 2 - 4; d++) {
+    let diagStr = "";
+    for (let r = 0; r < size; r++) {
+      let c = d - r;
+      if (c >= 0 && c < size) diagStr += tileChar(r, c);
+    }
+    if (diagStr.length >= 4) lines.push(diagStr);
+  }
+
+  return lines;
+}
+
+// ==========================================
+// THE PATTERN SCANNER
+// ==========================================
+function evaluateLineString(lineStr) {
   let score = 0;
 
-  // --- 1. TERMINAL STATES (Must be untouchably high) ---
-  score += 1000000 * stats[`${playerPrefix}Igos`];
-  score -= 1000000 * stats[`${opponentPrefix}Igos`];
+  // OVERLINE TRAPS (If it creates 5, penalize heavily!)
+  if (
+    lineStr.includes("10111") ||
+    lineStr.includes("11101") ||
+    lineStr.includes("11011")
+  ) {
+    score -= 500;
+  } else {
+    // STANDARD MIGO THREATS
+    if (lineStr.includes("01110")) score += 800; // Open 3
+    if (lineStr.includes("01011") || lineStr.includes("11010")) score += 800; // Broken 3
+    if (lineStr.includes("001100")) score += 250; // Open 2
+  }
 
-  // --- 2. YUGO THREATS (Paths to instant win) ---
-  score += 50000 * stats[`${playerPrefix}YugoOpen3s`];
-  score += 10000 * stats[`${playerPrefix}YugoOpen2s`];
-  score -= 90000 * stats[`${opponentPrefix}YugoOpen3s`];
-  score -= 18000 * stats[`${opponentPrefix}YugoOpen2s`];
+  // AI YUGO NETWORKS & SANDWICHES (Massively Buffed!)
+  if (lineStr.includes("0333") || lineStr.includes("3330")) score += 100000;
+  if (lineStr.includes("303")) score += 45000;
+  if (lineStr.includes("3110") || lineStr.includes("0113")) score += 60000; // Anchor Extension (was 25k)
+  if (lineStr.includes("3003")) score += 20000; // Yugo Sandwich Gap (was 5k)
+  if (lineStr.includes("3103") || lineStr.includes("3013")) score += 90000; // Lethal Sandwich (was 35k)
+  if (lineStr.includes("03030") || lineStr.includes("0330")) score += 40000; // Sniper Network (was 15k)
 
-  // --- 3. MIGO THREATS (Paths to making a Yugo) ---
-  score += 2000 * stats[`${playerPrefix}MigoDoubleThreats`];
-  score += 800 * stats[`${playerPrefix}MigoOpen3s`];
-  score += 250 * stats[`${playerPrefix}MigoOpen2s`];
-  score -= 8000 * stats[`${opponentPrefix}MigoDoubleThreats`];
-  score -= 25000 * stats[`${opponentPrefix}MigoOpen3s`];
-  score -= 5000 * stats[`${opponentPrefix}MigoOpen2s`];
+  // =====================================
+  // OPPONENT PENALTIES (Defensive Blocks)
+  // =====================================
+  if (lineStr.includes("02220")) score -= 3000; // Opp Open 3
+  if (lineStr.includes("02022") || lineStr.includes("22020")) score -= 3000; // Opp Broken 3
+  if (lineStr.includes("002200")) score -= 900; // Opp Open 2
 
-  // --- 4. YUGO POSITION & COUNT ---
-  score += 1500 * stats[`${playerPrefix}CenterYugos`];
-  score += 400 * stats[`${playerPrefix}EdgeYugos`];
-  score -= 1600 * stats[`${opponentPrefix}CenterYugos`];
-  score -= 450 * stats[`${opponentPrefix}EdgeYugos`];
-
-  // --- 5. DYNAMIC BOARD CONTROL ---
-  score += 500 * stats[`${playerPrefix}MigoSynergy`];
-  score += 150 * stats[`${playerPrefix}MigoCenterControl`];
-  score += 100 * stats[`${playerPrefix}MigoConnectivity`];
-  score -= 200 * stats[`${playerPrefix}DeadLines`];
+  // OPPONENT YUGO NETWORKS (Terrifying threats)
+  if (lineStr.includes("0440")) score -= 40000;
+  if (lineStr.includes("0444") || lineStr.includes("4440")) score -= 150000;
+  if (lineStr.includes("404")) score -= 60000;
+  if (lineStr.includes("4220") || lineStr.includes("0224")) score -= 80000;
+  if (lineStr.includes("4004")) score -= 15000;
+  if (lineStr.includes("4204") || lineStr.includes("4024")) score -= 100000;
 
   return score;
 }
 
-function collectHeuristicStats(board) {
-  const stats = {
-    p1Igos: 0,
-    p2Igos: 0,
-    p1YugoOpen3s: 0,
-    p2YugoOpen3s: 0,
-    p1YugoOpen2s: 0,
-    p2YugoOpen2s: 0,
-    p1MigoDoubleThreats: 0,
-    p2MigoDoubleThreats: 0,
-    p1MigoOpen3s: 0,
-    p2MigoOpen3s: 0,
-    p1MigoOpen2s: 0,
-    p2MigoOpen2s: 0,
-    p1CenterYugos: 0,
-    p2CenterYugos: 0,
-    p1EdgeYugos: 0,
-    p2EdgeYugos: 0,
-    p1MigoSynergy: 0,
-    p2MigoSynergy: 0,
-    p1MigoCenterControl: 0,
-    p2MigoCenterControl: 0,
-    p1MigoConnectivity: 0,
-    p2MigoConnectivity: 0,
-    p1DeadLines: 0,
-    p2DeadLines: 0,
-  };
-
-  const player1AllMigos = new Set();
-  const player2AllMigos = new Set();
-  const player1ActiveMigos = new Set();
-  const player2ActiveMigos = new Set();
-
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      const tile = board[row][col];
-      if (!tile) continue;
-
-      const key = `${row}:${col}`;
-      const isCenter = row >= 2 && row <= 5 && col >= 2 && col <= 5;
-      const isEdge =
-        row === 0 || row === size - 1 || col === 0 || col === size - 1;
-
-      if (tile.player === 1) {
-        if (tile.yugo) {
-          if (isCenter) stats.p1CenterYugos += 1;
-          if (isEdge) stats.p1EdgeYugos += 1;
-        } else {
-          player1AllMigos.add(key);
-          if (isCenter) stats.p1MigoCenterControl += 1;
-        }
-      } else {
-        if (tile.yugo) {
-          if (isCenter) stats.p2CenterYugos += 1;
-          if (isEdge) stats.p2EdgeYugos += 1;
-        } else {
-          player2AllMigos.add(key);
-          if (isCenter) stats.p2MigoCenterControl += 1;
-        }
-      }
-    }
-  }
-
-  const directions = [
-    [0, 1],
-    [1, 0],
-    [1, 1],
-    [1, -1],
+// ==========================================
+// THE POSITIONAL HEATMAP
+// ==========================================
+function calculateHeatmap(board, player) {
+  let heatScore = 0;
+  const heatGrid = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 2, 2, 2, 2, 1, 0],
+    [0, 1, 2, 3, 3, 2, 1, 0],
+    [0, 1, 2, 3, 3, 2, 1, 0],
+    [0, 1, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
   ];
 
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      for (const [dr, dc] of directions) {
-        const cells = [];
-        let p1Migos = 0;
-        let p1Yugos = 0;
-        let p2Migos = 0;
-        let p2Yugos = 0;
-        let empties = 0;
-        let invalid = false;
-
-        for (let step = 0; step < 4; step += 1) {
-          const nextRow = row + step * dr;
-          const nextCol = col + step * dc;
-          if (
-            nextRow < 0 ||
-            nextRow >= size ||
-            nextCol < 0 ||
-            nextCol >= size
-          ) {
-            invalid = true;
-            break;
-          }
-
-          cells.push([nextRow, nextCol]);
-          const tile = board[nextRow][nextCol];
-          if (!tile) {
-            empties += 1;
-          } else if (tile.player === 1) {
-            if (tile.yugo) p1Yugos += 1;
-            else p1Migos += 1;
-          } else if (tile.player === 2) {
-            if (tile.yugo) p2Yugos += 1;
-            else p2Migos += 1;
-          }
-        }
-
-        if (invalid) continue;
-
-        if (p1Yugos === 4) stats.p1Igos += 1;
-        if (p2Yugos === 4) stats.p2Igos += 1;
-
-        if (p1Yugos === 3 && empties === 1 && p2Migos + p2Yugos === 0) {
-          stats.p1YugoOpen3s += 1;
-        }
-        if (p2Yugos === 3 && empties === 1 && p1Migos + p1Yugos === 0) {
-          stats.p2YugoOpen3s += 1;
-        }
-        if (p1Yugos === 2 && empties === 2 && p2Migos + p2Yugos === 0) {
-          stats.p1YugoOpen2s += 1;
-        }
-        if (p2Yugos === 2 && empties === 2 && p1Migos + p1Yugos === 0) {
-          stats.p2YugoOpen2s += 1;
-        }
-
-        if (p1Migos === 3 && empties === 1 && p2Migos + p2Yugos === 0) {
-          stats.p1MigoOpen3s += 1;
-          cells.forEach(([nextRow, nextCol]) => {
-            const tile = board[nextRow][nextCol];
-            if (tile && tile.player === 1 && !tile.yugo) {
-              player1ActiveMigos.add(`${nextRow}:${nextCol}`);
-            }
-          });
-        }
-        if (p2Migos === 3 && empties === 1 && p1Migos + p1Yugos === 0) {
-          stats.p2MigoOpen3s += 1;
-          cells.forEach(([nextRow, nextCol]) => {
-            const tile = board[nextRow][nextCol];
-            if (tile && tile.player === 2 && !tile.yugo) {
-              player2ActiveMigos.add(`${nextRow}:${nextCol}`);
-            }
-          });
-        }
-
-        if (p1Migos === 2 && empties === 2 && p2Migos + p2Yugos === 0) {
-          stats.p1MigoOpen2s += 1;
-          cells.forEach(([nextRow, nextCol]) => {
-            const tile = board[nextRow][nextCol];
-            if (tile && tile.player === 1 && !tile.yugo) {
-              player1ActiveMigos.add(`${nextRow}:${nextCol}`);
-            }
-          });
-        }
-        if (p2Migos === 2 && empties === 2 && p1Migos + p1Yugos === 0) {
-          stats.p2MigoOpen2s += 1;
-          cells.forEach(([nextRow, nextCol]) => {
-            const tile = board[nextRow][nextCol];
-            if (tile && tile.player === 2 && !tile.yugo) {
-              player2ActiveMigos.add(`${nextRow}:${nextCol}`);
-            }
-          });
-        }
-
-        const player1Pieces = p1Migos + p1Yugos;
-        const player2Pieces = p2Migos + p2Yugos;
-
-        if (p2Migos + p2Yugos > 0 && p1Migos + p1Yugos > 0) {
-          cells.forEach(([nextRow, nextCol]) => {
-            const tile = board[nextRow][nextCol];
-            if (tile && tile.player === 1 && !tile.yugo) {
-              stats.p1DeadLines += 1;
-            }
-            if (tile && tile.player === 2 && !tile.yugo) {
-              stats.p2DeadLines += 1;
-            }
-          });
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const tile = board[r][c];
+      if (tile && tile.player === player) {
+        if (tile.yugo) {
+          heatScore += heatGrid[r][c] * 5; // Yugos in the center are brutal
         } else {
-          if (player1Pieces >= 2 && player2Pieces === 0 && empties >= 1) {
-            cells.forEach(([nextRow, nextCol]) => {
-              const tile = board[nextRow][nextCol];
-              if (tile && tile.player === 1 && !tile.yugo) {
-                player1ActiveMigos.add(`${nextRow}:${nextCol}`);
-              }
-            });
-          }
-          if (player2Pieces >= 2 && player1Pieces === 0 && empties >= 1) {
-            cells.forEach(([nextRow, nextCol]) => {
-              const tile = board[nextRow][nextCol];
-              if (tile && tile.player === 2 && !tile.yugo) {
-                player2ActiveMigos.add(`${nextRow}:${nextCol}`);
-              }
-            });
-          }
-
-          if (player1Pieces > 0 && player2Pieces === 0) {
-            if (player1Pieces >= 2 && empties >= 1) stats.p1MigoSynergy += 1;
-          } else if (player2Pieces > 0 && player1Pieces === 0) {
-            if (player2Pieces >= 2 && empties >= 1) stats.p2MigoSynergy += 1;
-          }
+          heatScore += heatGrid[r][c];
         }
       }
     }
   }
-
-  stats.p1DeadLines += Math.max(
-    0,
-    player1AllMigos.size - player1ActiveMigos.size,
-  );
-  stats.p2DeadLines += Math.max(
-    0,
-    player2AllMigos.size - player2ActiveMigos.size,
-  );
-
-  stats.p1MigoConnectivity = countMigoConnectivity(board, 1);
-  stats.p2MigoConnectivity = countMigoConnectivity(board, 2);
-
-  return stats;
+  return heatScore;
 }
 
 function countMigoConnectivity(board, player) {
@@ -978,6 +942,15 @@ function countMigoConnectivity(board, player) {
   }
 
   return pairs;
+}
+
+function getMigoHeatmapValue(row, col) {
+  const center = 3.5;
+  const distance = Math.abs(row - center) + Math.abs(col - center);
+  if (distance <= 1.5) return 4;
+  if (distance <= 3) return 3;
+  if (distance <= 4.5) return 2;
+  return 1;
 }
 
 function countYugosOnBoard(board, player) {

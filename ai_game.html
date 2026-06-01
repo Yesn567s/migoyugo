@@ -45,9 +45,9 @@
             type="number"
             id="aiMaxDepth"
             min="1"
-            max="15"
+            max="8"
             step="1"
-            value="4"
+            value="6"
           />
         </div>
 
@@ -63,7 +63,27 @@
 
     <!-- Game Over Modal -->
     <div class="modal-backdrop hidden" id="gameOverModal">
-      <div class="modal-box">
+      <div class="modal-box" style="position: relative">
+        <button
+          id="closeGameOverBtn"
+          style="
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #888;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+            transition: color 0.2s;
+          "
+          onmouseover="this.style.color = '#fff'"
+          onmouseout="this.style.color = '#888'"
+        >
+          &times;
+        </button>
         <h2
           id="goTitle"
           class="winner-text"
@@ -234,6 +254,7 @@
       const goP1Score = document.getElementById("goP1Score");
       const goP2Score = document.getElementById("goP2Score");
       const playAgainBtn = document.getElementById("playAgainBtn");
+      const closeGameOverBtn = document.getElementById("closeGameOverBtn");
 
       const logModal = document.getElementById("logModal");
       const viewLogBtn = document.getElementById("viewLogBtn");
@@ -261,6 +282,7 @@
         winner: null,
         gameStarted: false,
         moveHistory: [],
+        gameMoves: [],
         moveCount: 0,
         aiThinking: false,
       };
@@ -305,6 +327,10 @@
       playAgainBtn.addEventListener("click", () => {
         gameOverModal.classList.add("hidden");
         resetGame();
+      });
+
+      closeGameOverBtn.addEventListener("click", () => {
+        gameOverModal.classList.add("hidden");
       });
 
       viewLogBtn.addEventListener("click", () => {
@@ -390,6 +416,9 @@
       function placeTile(row, col) {
         const player = state.turn;
         state.board[row][col] = { player, yugo: false };
+
+        let notation = `${String.fromCharCode(97 + col)}${row + 1}`;
+
         pushLog(`${players[player].name} placed at ${cellName(row, col)}`);
 
         playSound(`${players[player].color}.mp3`);
@@ -397,11 +426,14 @@
         const lines = findAllStraightLines(row, col, player);
         if (lines.length > 0) {
           formYugo(lines, player, { row, col });
+          notation += "*".repeat(lines.length);
           pushLog(
             `${players[player].name} formed a Yugo at ${cellName(row, col)}!`,
             true,
           );
         }
+
+        state.gameMoves.push(notation);
 
         if (checkIgo(player)) {
           state.gameOver = true;
@@ -617,35 +649,47 @@
       function pushLog(message, isImportant = false) {
         logElement.textContent = message;
 
-        if (message.includes("Invalid")) {
+        if (
+          message.includes("Invalid") ||
+          message.includes("occupied") ||
+          message.includes("Cannot")
+        ) {
           logElement.style.color = "var(--danger)";
         } else {
           logElement.style.color = "#dce6ff";
         }
-
-        if (!message.includes("Invalid") && !message.includes("occupied")) {
-          state.moveHistory.push({
-            player: state.turn,
-            message,
-            important: isImportant,
-          });
-        }
+        // We removed the array pushing from here completely!
       }
 
       function renderHistoryList() {
         historyList.innerHTML = "";
-        if (state.moveHistory.length === 0) {
+        if (state.gameMoves.length === 0) {
           historyList.innerHTML =
             '<div style="color: var(--muted);">No moves yet</div>';
           return;
         }
 
-        state.moveHistory.forEach((entry, idx) => {
-          const item = document.createElement("div");
-          item.className = `history-item ${entry.important ? "important" : ""}`;
-          item.innerHTML = `<span class="move-num">${idx + 1}</span><span>${entry.message}</span>`;
-          historyList.appendChild(item);
-        });
+        // Loop through moves in pairs of 2 (White, then Black)
+        for (let i = 0; i < state.gameMoves.length; i += 2) {
+          const turnNum = Math.floor(i / 2) + 1;
+          const whiteMove = state.gameMoves[i];
+          const blackMove = state.gameMoves[i + 1] || ""; // Might be empty if game ends on White's turn
+
+          const turnBlock = document.createElement("div");
+          turnBlock.style.marginBottom = "10px";
+          turnBlock.style.fontFamily = "monospace";
+          turnBlock.style.fontSize = "1.2rem";
+          turnBlock.style.lineHeight = "1.4";
+
+          // Format it exactly like the professional logs
+          turnBlock.innerHTML = `
+            <div style="color: #888;">${turnNum}.</div>
+            <div style="color: #fff;">${whiteMove}</div>
+            ${blackMove ? `<div style="color: #fff;">${blackMove}</div>` : ""}
+          `;
+          historyList.appendChild(turnBlock);
+        }
+
         historyList.scrollTop = historyList.scrollHeight;
       }
 
@@ -712,6 +756,7 @@
         state.gameOver = false;
         state.winner = null;
         state.moveHistory = [];
+        state.gameMoves = [];
         state.moveCount = 0;
         state.aiThinking = false;
         pushLog("Game restarted. White moves first.");
