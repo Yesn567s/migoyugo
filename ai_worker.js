@@ -686,12 +686,23 @@ function tacticalMoveBonus(board, move, player, opponent) {
 
       // --- AI'S OFFENSIVE SORTING ---
       const totalPlayerPieces = playerYugos + playerMigos;
-      if (totalPlayerPieces === 3 && empties === 1) score += 6500;
+      if (playerYugos === 3 && empties === 1) score += 50000;
+      else if (totalPlayerPieces === 3 && empties === 1) score += 6500;
       if (totalPlayerPieces === 2 && empties === 2) score += 1100;
 
       // --- OPPONENT'S DEFENSIVE SORTING ---
       const totalOpponentPieces = opponentYugos + opponentMigos;
-      if (totalOpponentPieces === 3 && empties === 1) score += 9000;
+
+      // 1. INSTANT BLOCKS (Highest Priority)
+      if (opponentYugos === 3 && empties === 1) score += 49000;
+      else if (totalOpponentPieces === 3 && empties === 1) score += 20000;
+
+      // 2. YUGO PANIC (Catch Open 2 Yugos!)
+      if (opponentYugos === 2 && empties === 2) score += 25000;
+      if (opponentYugos === 2 && empties === 1) score += 15000;
+
+      // 3. THE FIX: The Real Open 2 Block (Empties MUST be 2!)
+      if (totalOpponentPieces === 2 && empties === 2) score += 8000;
       if (totalOpponentPieces === 2 && empties === 1) score += 5000;
     }
   }
@@ -873,6 +884,8 @@ function evaluateLineString(lineStr) {
 
   // OPPONENT YUGO NETWORKS (Terrifying threats)
   if (lineStr.includes("0440")) score -= 40000;
+  if (lineStr.includes("2440") || lineStr.includes("0442")) score -= 50000;
+  if (lineStr.includes("2444") || lineStr.includes("4442")) score -= 150000;
   if (lineStr.includes("0444") || lineStr.includes("4440")) score -= 150000;
   if (lineStr.includes("404")) score -= 60000;
   if (lineStr.includes("4220") || lineStr.includes("0224")) score -= 80000;
@@ -975,23 +988,32 @@ function wouldCreateLongLineOnBoard(board, row, col, player) {
   ];
 
   for (const [dr, dc] of directions) {
-    let count = 1;
+    let count = 1; // The piece being placed counts as 1
+
+    // Check positive direction
     for (let i = 1; i < 8; i++) {
       const nr = row + i * dr;
       const nc = col + i * dc;
       if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
       const tile = board[nr][nc];
-      if (!tile || tile.player !== player) break;
+
+      // THE FIX: Stop counting if it is empty, opponent's, OR A YUGO!
+      // The Overline restriction only applies to Migos.
+      if (!tile || tile.player !== player || tile.yugo) break;
       count++;
     }
+
+    // Check negative direction
     for (let i = 1; i < 8; i++) {
       const nr = row - i * dr;
       const nc = col - i * dc;
       if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
       const tile = board[nr][nc];
-      if (!tile || tile.player !== player) break;
+
+      if (!tile || tile.player !== player || tile.yugo) break;
       count++;
     }
+
     if (count > 4) return true;
   }
   return false;
