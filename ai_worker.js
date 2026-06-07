@@ -2,31 +2,47 @@
 const size = 8;
 const MAX_DEPTH = 4;
 
-// --- NEW: THE MEMORY BANK ---
+// --- TIME MANAGEMENT ---
+let searchAborted = false;
+let searchEndTime = 0;
+let nodesEvaluated = 0;
+
+// --- THE ZOBRIST MEMORY BANK ---
 const ttMap = new Map();
 
-// Pre-allocate the memory array once
-const HASH_BUFFER = new Array(64);
+// 8x8 board = 64 squares. 4 piece types (P1 Migo, P1 Yugo, P2 Migo, P2 Yugo)
+// 64 * 4 = 256 unique piece states.
+const ZOBRIST_TABLE = new BigInt64Array(256);
 
-function hashBoard(board) {
-  let idx = 0;
+// Initialize the table with random 64-bit integers once when the worker loads
+for (let i = 0; i < 256; i++) {
+  const low = BigInt(Math.floor(Math.random() * 0xffffffff));
+  const high = BigInt(Math.floor(Math.random() * 0xffffffff));
+  ZOBRIST_TABLE[i] = (high << 32n) | low;
+}
+
+// Helper to get the specific ID for a piece on a square
+function getZobristIndex(row, col, player, isYugo) {
+  const square = row * size + col;
+  const pieceType = (player === 1 ? 0 : 2) + (isYugo ? 1 : 0);
+  return square * 4 + pieceType;
+}
+
+// Track the live hash globally during the search
+let currentHash = 0n;
+
+// Calculate the hash from scratch ONLY ONCE at the start of the turn
+function computeInitialHash(board) {
+  let hash = 0n;
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      const t = board[r][c];
-      // Fast branchless assignment
-      HASH_BUFFER[idx++] = t
-        ? t.player === 1
-          ? t.yugo
-            ? "3"
-            : "1"
-          : t.yugo
-            ? "4"
-            : "2"
-        : "0";
+      const tile = board[r][c];
+      if (tile) {
+        hash ^= ZOBRIST_TABLE[getZobristIndex(r, c, tile.player, tile.yugo)];
+      }
     }
   }
-  // V8 optimizes array.join heavily
-  return HASH_BUFFER.join("");
+  return hash;
 }
 // -----------------------------
 
@@ -34,6 +50,9 @@ self.onmessage = function (e) {
   ttMap.clear();
   const { board, playerColor, turn, maxDepth } = e.data;
   const searchMaxDepth = Number.isFinite(maxDepth) ? maxDepth : MAX_DEPTH;
+
+  // --- NEW: Calculate the starting hash ---
+  currentHash = computeInitialHash(board);
 
   // Get all legal moves
   const legalMoves = [];
@@ -97,33 +116,69 @@ self.onmessage = function (e) {
 
   // ==========================================
 
-  for (const move of movesToScore) {
-    // FAST MUTATE
-    const history = applyMove(board, move.row, move.col, turn);
-    const nextPlayer = turn === 1 ? 2 : 1;
+  // Set the time limit (e.g., 1500 milliseconds = 1.5 seconds)
+  // You can pass this from your main JS file via e.data!
+  const timeLimitMs = e.data.timeLimitMs || Infinity;
 
-    // Pass the SAME board into minimax, not a clone
-    const score = minimax(
-      board,
-      nextPlayer,
-      1,
-      -Infinity,
-      Infinity,
-      false,
-      playerColor,
-      searchMaxDepth,
-    );
+  searchAborted = false;
+  searchEndTime = performance.now() + timeLimitMs;
+  nodesEvaluated = 0;
 
-    // FAST UNDO
-    undoMove(board, history);
+  let globalBestMove = movesToScore[0];
+  let globalBestScore = -Infinity;
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = move;
+  // --- NEW: ITERATIVE DEEPENING LOOP ---
+  // Start at depth 1 and keep going deeper until time runs out or we hit maxDepth
+  for (let currentDepth = 1; currentDepth <= searchMaxDepth; currentDepth++) {
+    let depthBestMove = movesToScore[0];
+    let depthBestScore = -Infinity;
+
+    for (const move of movesToScore) {
+      const history = applyMove(board, move.row, move.col, turn);
+      const nextPlayer = turn === 1 ? 2 : 1;
+
+      const score = minimax(
+        board,
+        nextPlayer,
+        currentDepth - 1, // How much further down to go
+        -Infinity,
+        Infinity,
+        false,
+        playerColor,
+        currentDepth,
+      );
+
+      undoMove(board, history);
+
+      // If time ran out mid-search, break out of this loop!
+      if (searchAborted) break;
+
+      if (score > depthBestScore) {
+        depthBestScore = score;
+        depthBestMove = move;
+      }
     }
+
+    // If we aborted during this depth, DO NOT use its incomplete results.
+    // We rely on the globalBestMove from the PREVIOUS fully completed depth.
+    if (searchAborted) {
+      break;
+    }
+
+    // We fully completed this depth! Save the reliable results.
+    globalBestMove = depthBestMove;
+    globalBestScore = depthBestScore;
+
+    // --- PRO TIP: Move Ordering ---
+    // If we have time to go to the next depth, push the best move we just found
+    // to the very front of the array. Searching the best move first makes Alpha-Beta pruning insanely fast.
+    movesToScore.sort((a, b) =>
+      a === depthBestMove ? -1 : b === depthBestMove ? 1 : 0,
+    );
   }
 
-  self.postMessage({ bestMove, bestScore });
+  // Send back the best result we found before the buzzer rang
+  self.postMessage({ bestMove: globalBestMove, bestScore: globalBestScore });
 };
 
 function minimax(
@@ -138,8 +193,18 @@ function minimax(
 ) {
   const aiPlayer = playerColor === 1 ? 2 : 1;
 
+  // --- NEW: TIME CHECK EVERY 1000 NODES ---
+  if (++nodesEvaluated > 1000) {
+    nodesEvaluated = 0;
+    if (performance.now() > searchEndTime) {
+      searchAborted = true;
+    }
+  }
+  // If we ran out of time, immediately back out. The score doesn't matter because it gets thrown away.
+  if (searchAborted) return 0;
+
   // --- 1. CHECK THE TRANSPOSITION TABLE ---
-  const hash = hashBoard(board);
+  const hash = currentHash;
   const remainingDepth = maxDepth - depth;
 
   if (ttMap.has(hash)) {
@@ -296,11 +361,17 @@ function applyMove(board, row, col, player) {
     row: row,
     col: col,
     changes: [],
+    hashToggles: [], // NEW: Track what we flip to easily undo it
   };
 
-  // 1. Save the empty tile state before placing the piece
+  // 1. Place the new Migo
   history.changes.push({ r: row, c: col, prev: null });
   board[row][col] = { player, yugo: false };
+
+  // Toggle the hash for the placed Migo
+  const placedMigoKey = ZOBRIST_TABLE[getZobristIndex(row, col, player, false)];
+  currentHash ^= placedMigoKey;
+  history.hashToggles.push(placedMigoKey);
 
   const lines = findAllStraightLinesOnBoard(board, row, col, player);
 
@@ -308,13 +379,12 @@ function applyMove(board, row, col, player) {
     const tilesAffected = [];
     const existingYugos = [];
 
-    // Map out all the tiles involved in the line (String-free!)
+    // Map out all the tiles involved in the line
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       for (let j = 0; j < line.length; j++) {
         const [r, c] = line[j];
 
-        // Fast deduplication array search
         let alreadyAdded = false;
         for (let k = 0; k < tilesAffected.length; k++) {
           if (tilesAffected[k].r === r && tilesAffected[k].c === c) {
@@ -331,30 +401,56 @@ function applyMove(board, row, col, player) {
       }
     }
 
-    // 2. Save the state of every affected tile BEFORE wiping it
+    // 2. Save state & Wipe affected tiles
     for (let i = 0; i < tilesAffected.length; i++) {
       const { r, c } = tilesAffected[i];
+      const prevTile = board[r][c];
+
       if (r !== row || c !== col) {
-        history.changes.push({ r, c, prev: board[r][c] });
+        history.changes.push({ r, c, prev: prevTile });
       }
-      board[r][c] = null; // Wipe it
+
+      // Toggle hash to REMOVE the piece (it works instantly!)
+      if (prevTile) {
+        const removeKey =
+          ZOBRIST_TABLE[getZobristIndex(r, c, prevTile.player, prevTile.yugo)];
+        currentHash ^= removeKey;
+        history.hashToggles.push(removeKey);
+      }
+
+      board[r][c] = null;
     }
 
-    // 3. Re-place Yugos
+    // 3. Re-place existing Yugos
     for (let i = 0; i < existingYugos.length; i++) {
       const { r, c } = existingYugos[i];
       board[r][c] = { player, yugo: true };
+
+      // Toggle hash to ADD the Yugo back
+      const yugoKey = ZOBRIST_TABLE[getZobristIndex(r, c, player, true)];
+      currentHash ^= yugoKey;
+      history.hashToggles.push(yugoKey);
     }
+
+    // 4. Transform the placed Migo into a Yugo
     board[row][col] = { player, yugo: true };
+    const newYugoKey = ZOBRIST_TABLE[getZobristIndex(row, col, player, true)];
+    currentHash ^= newYugoKey;
+    history.hashToggles.push(newYugoKey);
   }
 
   return history;
 }
 
 function undoMove(board, history) {
-  // Read the history and restore the exact previous state of every touched tile
+  // Restore the board state
   for (const change of history.changes) {
     board[change.r][change.c] = change.prev;
+  }
+
+  // Revert the exact hash changes (XOR is its own inverse!)
+  for (const toggleKey of history.hashToggles) {
+    currentHash ^= toggleKey;
   }
 }
 
@@ -891,11 +987,8 @@ function evaluate(board, aiPlayer) {
   totalScore += myOpen2s * 1500;
   totalScore -= oppOpen2s * 40000; // SHUT DOWN Open 2s at all costs!
 
-  // --- 5. STRING PATTERN SCANNING (Sandwiches & Traps) ---
-  let allLines = extractAllLinesAsStrings(board, aiPlayer, humanPlayer);
-  for (let lineStr of allLines) {
-    totalScore += evaluateLineString(lineStr);
-  }
+  // --- 5. FAST INTEGER PATTERN SCANNING ---
+  totalScore += evaluateAllLinesFast(board, aiPlayer, humanPlayer);
 
   // --- 6. HEATMAP ---
   totalScore += calculateHeatmap(board, aiPlayer);
@@ -905,108 +998,210 @@ function evaluate(board, aiPlayer) {
 }
 
 // ==========================================
-// STRING EXTRACTOR (Converts the 2D Board into text)
+// FAST INTEGER PATTERN SCANNER (No Strings!)
 // ==========================================
-function extractAllLinesAsStrings(board, aiPlayer, humanPlayer) {
-  const lines = [];
+const lineBuffer = new Int8Array(8);
 
-  // Helper to map your objects to string characters:
-  // "0" = Empty | "1" = AI Migo | "3" = AI Yugo | "2" = Human Migo | "4" = Human Yugo
-  function tileChar(r, c) {
-    const tile = board[r][c];
-    if (!tile) return "0";
-    if (tile.player === aiPlayer) return tile.yugo ? "3" : "1";
-    if (tile.player === humanPlayer) return tile.yugo ? "4" : "2";
-    return "0";
+function evaluateAllLinesFast(board, aiPlayer, humanPlayer) {
+  let totalScore = 0;
+
+  // Map to Ints: 0=Empty, 1=AI Migo, 2=AI Yugo, 3=Hum Migo, 4=Hum Yugo
+  function getVal(r, c) {
+    const t = board[r][c];
+    if (!t) return 0;
+    if (t.player === aiPlayer) return t.yugo ? 2 : 1;
+    return t.yugo ? 4 : 3;
   }
 
-  // Extract Rows
-  for (let r = 0; r < size; r++) {
-    let rowStr = "";
-    for (let c = 0; c < size; c++) rowStr += tileChar(r, c);
-    lines.push(rowStr);
+  // Extracts a line into our reusable buffer, then scores it
+  function scanAndScore(startX, startY, dX, dY, length) {
+    for (let i = 0; i < length; i++) {
+      lineBuffer[i] = getVal(startX + i * dX, startY + i * dY);
+    }
+    totalScore += scoreLineBuffer(length);
   }
 
-  // Extract Columns
-  for (let c = 0; c < size; c++) {
-    let colStr = "";
-    for (let r = 0; r < size; r++) colStr += tileChar(r, c);
-    lines.push(colStr);
-  }
+  // 1. Rows
+  for (let r = 0; r < size; r++) scanAndScore(r, 0, 0, 1, size);
 
-  // Extract Diagonals (Top-left to Bottom-right)
+  // 2. Columns
+  for (let c = 0; c < size; c++) scanAndScore(0, c, 1, 0, size);
+
+  // 3. Diagonals (Top-left to Bottom-right)
   for (let d = -(size - 4); d <= size - 4; d++) {
-    let diagStr = "";
+    let len = 0;
     for (let r = 0; r < size; r++) {
       let c = r - d;
-      if (c >= 0 && c < size) diagStr += tileChar(r, c);
+      if (c >= 0 && c < size) lineBuffer[len++] = getVal(r, c);
     }
-    if (diagStr.length >= 4) lines.push(diagStr);
+    if (len >= 4) totalScore += scoreLineBuffer(len);
   }
 
-  // Extract Diagonals (Top-right to Bottom-left)
+  // 4. Diagonals (Top-right to Bottom-left)
   for (let d = 3; d <= size * 2 - 4; d++) {
-    let diagStr = "";
+    let len = 0;
     for (let r = 0; r < size; r++) {
       let c = d - r;
-      if (c >= 0 && c < size) diagStr += tileChar(r, c);
+      if (c >= 0 && c < size) lineBuffer[len++] = getVal(r, c);
     }
-    if (diagStr.length >= 4) lines.push(diagStr);
+    if (len >= 4) totalScore += scoreLineBuffer(len);
   }
 
-  return lines;
+  return totalScore;
 }
 
-// ==========================================
-// THE PATTERN SCANNER
-// ==========================================
-function evaluateLineString(lineStr) {
+function scoreLineBuffer(len) {
   let score = 0;
 
-  // OVERLINE TRAPS (If it creates 5, penalize heavily!)
-  if (
-    lineStr.includes("10111") ||
-    lineStr.includes("11101") ||
-    lineStr.includes("11011")
-  ) {
-    score -= 500;
+  const isAI = (t) => t === 1 || t === 2;
+  const isHum = (t) => t === 3 || t === 4;
+  const isEmp = (t) => t === 0;
+
+  // --- Size 3 Windows ---
+  for (let i = 0; i <= len - 3; i++) {
+    const t1 = lineBuffer[i],
+      t2 = lineBuffer[i + 1],
+      t3 = lineBuffer[i + 2];
+    if (t1 === 4 && t2 === 0 && t3 === 4) score -= 60000; // Hum 404 Yugo Trap
   }
 
-  // --- THE FIX: Collapse Yugos into Migos for basic threat detection ---
-  // 1 = AI, 2 = Human
-  const simpleStr = lineStr.replace(/3/g, "1").replace(/4/g, "2");
+  // --- Size 4 Windows ---
+  for (let i = 0; i <= len - 4; i++) {
+    const t1 = lineBuffer[i],
+      t2 = lineBuffer[i + 1],
+      t3 = lineBuffer[i + 2],
+      t4 = lineBuffer[i + 3];
 
-  if (simpleStr.includes("01110")) score += 1500; // AI Open 3
-  if (simpleStr.includes("01011") || simpleStr.includes("11010")) score += 800; // AI Broken 3
-  if (simpleStr.includes("001100")) score += 250; // AI Open 2
+    // AI Caterpillar Offense
+    if (
+      (t1 === 0 && t2 === 1 && t3 === 2 && t4 === 0) ||
+      (t1 === 0 && t2 === 2 && t3 === 1 && t4 === 0)
+    )
+      score += 15000;
+    if (
+      (t1 === 0 && t2 === 1 && t3 === 1 && t4 === 2) ||
+      (t1 === 2 && t2 === 1 && t3 === 1 && t4 === 0)
+    )
+      score += 40000;
+    if (
+      (t1 === 0 && t2 === 1 && t3 === 2 && t4 === 1) ||
+      (t1 === 1 && t2 === 2 && t3 === 1 && t4 === 0)
+    )
+      score += 40000;
+    if (
+      (t1 === 0 && t2 === 1 && t3 === 2 && t4 === 2) ||
+      (t1 === 2 && t2 === 2 && t3 === 1 && t4 === 0)
+    )
+      score += 90000;
 
-  if (simpleStr.includes("02220")) score -= 5000; // Opp Open 3 (Massive penalty)
-  if (simpleStr.includes("02022") || simpleStr.includes("22020")) score -= 3000; // Opp Broken 3
-  if (simpleStr.includes("002200")) score -= 900; // Opp Open 2
+    // Human Caterpillar Defense
+    if (
+      (t1 === 0 && t2 === 3 && t3 === 4 && t4 === 0) ||
+      (t1 === 0 && t2 === 4 && t3 === 3 && t4 === 0)
+    )
+      score -= 25000;
+    if (
+      (t1 === 0 && t2 === 3 && t3 === 3 && t4 === 4) ||
+      (t1 === 4 && t2 === 3 && t3 === 3 && t4 === 0)
+    )
+      score -= 60000; // Combines the 80000 rule
+    if (
+      (t1 === 0 && t2 === 3 && t3 === 4 && t4 === 3) ||
+      (t1 === 3 && t2 === 4 && t3 === 3 && t4 === 0)
+    )
+      score -= 60000;
+    if (
+      (t1 === 0 && t2 === 3 && t3 === 4 && t4 === 4) ||
+      (t1 === 4 && t2 === 4 && t3 === 3 && t4 === 0)
+    )
+      score -= 150000;
 
-  // --- NEW: THE CATERPILLAR DEFENSE (Yugos are reusable!) ---
-  // 4 = Opponent Yugo, 2 = Opponent Migo
-  if (lineStr.includes("0240") || lineStr.includes("0420")) score -= 25000; // Yugo-backed Open 2
-  if (lineStr.includes("0224") || lineStr.includes("4220")) score -= 60000; // Yugo-backed Open 3
-  if (lineStr.includes("0242") || lineStr.includes("2420")) score -= 60000;
-  if (lineStr.includes("0244") || lineStr.includes("4420")) score -= 150000; // 2 Yugos + Migo (Lethal)
+    // Human Yugo Networks
+    if (t1 === 0 && t2 === 4 && t3 === 4 && t4 === 0) score -= 100000;
+    if (
+      (t1 === 3 && t2 === 4 && t3 === 4 && t4 === 0) ||
+      (t1 === 0 && t2 === 4 && t3 === 4 && t4 === 3)
+    )
+      score -= 50000;
+    if (
+      (t1 === 3 && t2 === 4 && t3 === 4 && t4 === 4) ||
+      (t1 === 4 && t2 === 4 && t3 === 4 && t4 === 3)
+    )
+      score -= 150000;
+    if (
+      (t1 === 0 && t2 === 4 && t3 === 4 && t4 === 4) ||
+      (t1 === 4 && t2 === 4 && t3 === 4 && t4 === 0)
+    )
+      score -= 150000;
+    if (t1 === 4 && t2 === 0 && t3 === 0 && t4 === 4) score -= 15000;
+    if (
+      (t1 === 4 && t2 === 3 && t3 === 0 && t4 === 4) ||
+      (t1 === 4 && t2 === 0 && t3 === 3 && t4 === 4)
+    )
+      score -= 100000;
+  }
 
-  // --- AI'S OWN CATERPILLAR OFFENSE ---
-  // 3 = AI Yugo, 1 = AI Migo
-  if (lineStr.includes("0130") || lineStr.includes("0310")) score += 15000;
-  if (lineStr.includes("0113") || lineStr.includes("3110")) score += 40000;
-  if (lineStr.includes("0131") || lineStr.includes("1310")) score += 40000;
-  if (lineStr.includes("0133") || lineStr.includes("3310")) score += 90000;
+  // --- Size 5 Windows (General Lines) ---
+  for (let i = 0; i <= len - 5; i++) {
+    const t1 = lineBuffer[i],
+      t2 = lineBuffer[i + 1],
+      t3 = lineBuffer[i + 2],
+      t4 = lineBuffer[i + 3],
+      t5 = lineBuffer[i + 4];
 
-  // OPPONENT YUGO NETWORKS (Terrifying threats)
-  if (lineStr.includes("0440")) score -= 100000;
-  if (lineStr.includes("2440") || lineStr.includes("0442")) score -= 50000;
-  if (lineStr.includes("2444") || lineStr.includes("4442")) score -= 150000;
-  if (lineStr.includes("0444") || lineStr.includes("4440")) score -= 150000;
-  if (lineStr.includes("404")) score -= 60000;
-  if (lineStr.includes("4220") || lineStr.includes("0224")) score -= 80000;
-  if (lineStr.includes("4004")) score -= 15000;
-  if (lineStr.includes("4204") || lineStr.includes("4024")) score -= 100000;
+    // Overline Penalty (Prevent building 5+)
+    if (isAI(t1) && isEmp(t2) && isAI(t3) && isAI(t4) && isAI(t5)) score -= 500;
+    if (isAI(t1) && isAI(t2) && isAI(t3) && isEmp(t4) && isAI(t5)) score -= 500;
+    if (isAI(t1) && isAI(t2) && isEmp(t3) && isAI(t4) && isAI(t5)) score -= 500;
+
+    // AI Basic Threats
+    if (isEmp(t1) && isAI(t2) && isAI(t3) && isAI(t4) && isEmp(t5))
+      score += 1500; // Open 3
+    if (
+      (isEmp(t1) && isAI(t2) && isEmp(t3) && isAI(t4) && isAI(t5)) ||
+      (isAI(t1) && isAI(t2) && isEmp(t3) && isAI(t4) && isEmp(t5))
+    )
+      score += 800; // Broken 3
+
+    // Human Basic Threats
+    if (isEmp(t1) && isHum(t2) && isHum(t3) && isHum(t4) && isEmp(t5))
+      score -= 5000; // Open 3
+    if (
+      (isEmp(t1) && isHum(t2) && isEmp(t3) && isHum(t4) && isHum(t5)) ||
+      (isHum(t1) && isHum(t2) && isEmp(t3) && isHum(t4) && isEmp(t5))
+    )
+      score -= 3000; // Broken 3
+  }
+
+  // --- Size 6 Windows ---
+  for (let i = 0; i <= len - 6; i++) {
+    const t1 = lineBuffer[i],
+      t2 = lineBuffer[i + 1],
+      t3 = lineBuffer[i + 2],
+      t4 = lineBuffer[i + 3],
+      t5 = lineBuffer[i + 4],
+      t6 = lineBuffer[i + 5];
+
+    // Open 2s
+    if (
+      isEmp(t1) &&
+      isEmp(t2) &&
+      isAI(t3) &&
+      isAI(t4) &&
+      isEmp(t5) &&
+      isEmp(t6)
+    )
+      score += 250;
+    if (
+      isEmp(t1) &&
+      isEmp(t2) &&
+      isHum(t3) &&
+      isHum(t4) &&
+      isEmp(t5) &&
+      isEmp(t6)
+    )
+      score -= 900;
+  }
 
   return score;
 }
