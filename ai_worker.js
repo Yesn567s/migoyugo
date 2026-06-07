@@ -5,13 +5,16 @@ const MAX_DEPTH = 4;
 // --- NEW: THE MEMORY BANK ---
 const ttMap = new Map();
 
+// Pre-allocate the memory array once
+const HASH_BUFFER = new Array(64);
+
 function hashBoard(board) {
-  let str = "";
+  let idx = 0;
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       const t = board[r][c];
-      // Converts the board into a fast 64-character string ID
-      str += t
+      // Fast branchless assignment
+      HASH_BUFFER[idx++] = t
         ? t.player === 1
           ? t.yugo
             ? "3"
@@ -22,7 +25,8 @@ function hashBoard(board) {
         : "0";
     }
   }
-  return str;
+  // V8 optimizes array.join heavily
+  return HASH_BUFFER.join("");
 }
 // -----------------------------
 
@@ -50,25 +54,57 @@ self.onmessage = function (e) {
   let bestMove = legalMoves[0];
   let bestScore = -Infinity;
 
-  const rootUrgentBlockCells = getUrgentBlockCells(board, other(turn));
+  // ==========================================
+  // --- THE PANIC BUTTON ---
+  // ==========================================
+
+  // 1. Can the AI win instantly?
+  const myIgoWins = getIgoThreatCells(board, turn);
+  if (myIgoWins.length > 0) {
+    self.postMessage({ bestMove: myIgoWins[0], bestScore: 99999 });
+    return; // Skip the search and win the game immediately!
+  }
+
+  // 2. Is the human about to win instantly?
+  const opponentIgoThreats = getIgoThreatCells(board, other(turn));
+  let rootMoves = legalMoves;
+
+  if (opponentIgoThreats.length > 0) {
+    // Human is threatening an Igo. ONLY look at moves that block it!
+    const threatSet = new Set(
+      opponentIgoThreats.map((m) => `${m.row}:${m.col}`),
+    );
+    rootMoves = legalMoves.filter((m) => threatSet.has(`${m.row}:${m.col}`));
+  } else {
+    // 3. Normal blocking AND attacking logic
+    const myCriticalCells = getCriticalCells(board, turn);
+    const oppCriticalCells = getCriticalCells(board, other(turn));
+
+    if (myCriticalCells.size > 0 || oppCriticalCells.size > 0) {
+      rootMoves = legalMoves.filter(
+        (move) =>
+          myCriticalCells.has(`${move.row}:${move.col}`) ||
+          oppCriticalCells.has(`${move.row}:${move.col}`),
+      );
+    }
+  }
+
   const rootMaxMoves = 25;
-  const rootMoves =
-    rootUrgentBlockCells.size > 0
-      ? legalMoves.filter((move) =>
-          rootUrgentBlockCells.has(`${move.row}:${move.col}`),
-        )
-      : legalMoves;
   const movesToScore =
     rootMoves.length > 0
       ? rootMoves.slice(0, Math.min(rootMaxMoves, rootMoves.length))
       : legalMoves.slice(0, Math.min(rootMaxMoves, legalMoves.length));
 
+  // ==========================================
+
   for (const move of movesToScore) {
-    const nextBoard = cloneBoard(board);
-    simulateMove(nextBoard, move.row, move.col, turn);
+    // FAST MUTATE
+    const history = applyMove(board, move.row, move.col, turn);
     const nextPlayer = turn === 1 ? 2 : 1;
+
+    // Pass the SAME board into minimax, not a clone
     const score = minimax(
-      nextBoard,
+      board,
       nextPlayer,
       1,
       -Infinity,
@@ -77,6 +113,9 @@ self.onmessage = function (e) {
       playerColor,
       searchMaxDepth,
     );
+
+    // FAST UNDO
+    undoMove(board, history);
 
     if (score > bestScore) {
       bestScore = score;
@@ -141,17 +180,22 @@ function minimax(
   );
 
   // Note: These limits are widened so the AI isn't wearing horse blinders
-  const maxMoves = depth <= 1 ? 25 : depth === 2 ? 20 : 15;
-  const urgentBlockCells = getUrgentBlockCells(board, other(player));
-  const urgentMoves =
-    urgentBlockCells.size > 0
-      ? legalMoves.filter((move) =>
-          urgentBlockCells.has(`${move.row}:${move.col}`),
+  const myCriticalCells = getCriticalCells(board, player);
+  const oppCriticalCells = getCriticalCells(board, other(player));
+
+  const criticalMoves =
+    myCriticalCells.size > 0 || oppCriticalCells.size > 0
+      ? legalMoves.filter(
+          (move) =>
+            myCriticalCells.has(`${move.row}:${move.col}`) ||
+            oppCriticalCells.has(`${move.row}:${move.col}`),
         )
       : [];
+
+  const maxMoves = 25;
   const movesToExplore =
-    urgentMoves.length > 0
-      ? urgentMoves.slice(0, Math.min(maxMoves, urgentMoves.length))
+    criticalMoves.length > 0
+      ? criticalMoves.slice(0, Math.min(maxMoves, criticalMoves.length))
       : legalMoves.slice(0, Math.min(maxMoves, legalMoves.length));
 
   // --- 4. THE SEARCH LOOP ---
@@ -161,19 +205,23 @@ function minimax(
   if (isMaximizing) {
     let maxEval = -Infinity;
     for (const move of movesToExplore) {
-      const newBoard = cloneBoard(board);
-      const preMoveYugos = countYugosOnBoard(board, player); // Check how many Yugos exist
+      const preMoveYugos = countYugosOnBoard(board, player);
 
-      simulateMove(newBoard, move.row, move.col, player);
+      // FAST MUTATE
+      const history = applyMove(board, move.row, move.col, player);
 
-      const postMoveYugos = countYugosOnBoard(newBoard, player); // Check if we made a new one
+      const postMoveYugos = countYugosOnBoard(board, player);
       const nextPlayer = player === 1 ? 2 : 1;
+      // Allow a maximum of 2 depth extensions per search path to prevent infinite loops
+      const MAX_EXTENSION = maxDepth + 2;
+      const nextDepth =
+        postMoveYugos > preMoveYugos && depth < MAX_EXTENSION
+          ? depth
+          : depth + 1;
 
-      // THE HORIZON FIX: If we formed a Yugo, don't increase the depth counter!
-      const nextDepth = postMoveYugos > preMoveYugos ? depth : depth + 1;
-
+      // Pass the SAME board into minimax
       const moveScore = minimax(
-        newBoard,
+        board,
         nextPlayer,
         nextDepth,
         alpha,
@@ -182,6 +230,10 @@ function minimax(
         playerColor,
         maxDepth,
       );
+
+      // FAST UNDO
+      undoMove(board, history);
+
       maxEval = Math.max(maxEval, moveScore);
       alpha = Math.max(alpha, moveScore);
       if (beta <= alpha) break;
@@ -190,19 +242,22 @@ function minimax(
   } else {
     let minEval = Infinity;
     for (const move of movesToExplore) {
-      const newBoard = cloneBoard(board);
       const preMoveYugos = countYugosOnBoard(board, player);
 
-      simulateMove(newBoard, move.row, move.col, player);
+      // FAST MUTATE
+      const history = applyMove(board, move.row, move.col, player);
 
-      const postMoveYugos = countYugosOnBoard(newBoard, player);
+      const postMoveYugos = countYugosOnBoard(board, player);
       const nextPlayer = player === 1 ? 2 : 1;
+      const MAX_EXTENSION = maxDepth + 2;
+      const nextDepth =
+        postMoveYugos > preMoveYugos && depth < MAX_EXTENSION
+          ? depth
+          : depth + 1;
 
-      // THE HORIZON FIX: Give the opponent the same courtesy extension
-      const nextDepth = postMoveYugos > preMoveYugos ? depth : depth + 1;
-
+      // Pass the SAME board into minimax
       const moveScore = minimax(
-        newBoard,
+        board,
         nextPlayer,
         nextDepth,
         alpha,
@@ -211,6 +266,10 @@ function minimax(
         playerColor,
         maxDepth,
       );
+
+      // FAST UNDO
+      undoMove(board, history);
+
       minEval = Math.min(minEval, moveScore);
       beta = Math.min(beta, moveScore);
       if (beta <= alpha) break;
@@ -232,38 +291,71 @@ function minimax(
   return bestScore;
 }
 
-function simulateMove(board, row, col, player) {
+function applyMove(board, row, col, player) {
+  const history = {
+    row: row,
+    col: col,
+    changes: [],
+  };
+
+  // 1. Save the empty tile state before placing the piece
+  history.changes.push({ r: row, c: col, prev: null });
   board[row][col] = { player, yugo: false };
+
   const lines = findAllStraightLinesOnBoard(board, row, col, player);
+
   if (lines.length > 0) {
-    const tilesToRemove = new Set();
+    const tilesAffected = [];
     const existingYugos = [];
 
-    for (const line of lines) {
-      for (const [r, c] of line) {
-        tilesToRemove.add(`${r}:${c}`);
-        const tile = board[r][c];
-        if (tile && tile.yugo) {
-          existingYugos.push({ r, c });
+    // Map out all the tiles involved in the line (String-free!)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      for (let j = 0; j < line.length; j++) {
+        const [r, c] = line[j];
+
+        // Fast deduplication array search
+        let alreadyAdded = false;
+        for (let k = 0; k < tilesAffected.length; k++) {
+          if (tilesAffected[k].r === r && tilesAffected[k].c === c) {
+            alreadyAdded = true;
+            break;
+          }
+        }
+
+        if (!alreadyAdded) {
+          tilesAffected.push({ r, c });
+          const tile = board[r][c];
+          if (tile && tile.yugo) existingYugos.push({ r, c });
         }
       }
     }
 
-    for (const key of tilesToRemove) {
-      const [r, c] = key.split(":").map(Number);
-      board[r][c] = null;
+    // 2. Save the state of every affected tile BEFORE wiping it
+    for (let i = 0; i < tilesAffected.length; i++) {
+      const { r, c } = tilesAffected[i];
+      if (r !== row || c !== col) {
+        history.changes.push({ r, c, prev: board[r][c] });
+      }
+      board[r][c] = null; // Wipe it
     }
 
-    for (const { r, c } of existingYugos) {
+    // 3. Re-place Yugos
+    for (let i = 0; i < existingYugos.length; i++) {
+      const { r, c } = existingYugos[i];
       board[r][c] = { player, yugo: true };
     }
-
     board[row][col] = { player, yugo: true };
   }
+
+  return history;
 }
 
-function cloneBoard(board) {
-  return board.map((row) => row.map((tile) => (tile ? { ...tile } : null)));
+function undoMove(board, history) {
+  // Read the history and restore the exact previous state of every touched tile
+  for (const change of history.changes) {
+    board[change.r][change.c] = change.prev;
+  }
 }
 
 function other(player) {
@@ -686,23 +778,34 @@ function tacticalMoveBonus(board, move, player, opponent) {
 
       // --- AI'S OFFENSIVE SORTING ---
       const totalPlayerPieces = playerYugos + playerMigos;
+
       if (playerYugos === 3 && empties === 1) score += 50000;
+      else if (playerYugos >= 1 && totalPlayerPieces === 3 && empties === 1)
+        score += 15000; // Caterpillar attack!
       else if (totalPlayerPieces === 3 && empties === 1) score += 6500;
-      if (totalPlayerPieces === 2 && empties === 2) score += 1100;
+
+      if (playerYugos >= 1 && totalPlayerPieces === 2 && empties === 2)
+        score += 8000; // Start caterpillar
+      else if (totalPlayerPieces === 2 && empties === 2) score += 1100;
 
       // --- OPPONENT'S DEFENSIVE SORTING ---
       const totalOpponentPieces = opponentYugos + opponentMigos;
 
       // 1. INSTANT BLOCKS (Highest Priority)
       if (opponentYugos === 3 && empties === 1) score += 49000;
+      else if (opponentYugos >= 1 && totalOpponentPieces === 3 && empties === 1)
+        score += 35000; // Block caterpillar!
       else if (totalOpponentPieces === 3 && empties === 1) score += 20000;
 
-      // 2. YUGO PANIC (Catch Open 2 Yugos!)
+      // 2. YUGO PANIC
       if (opponentYugos === 2 && empties === 2) score += 25000;
       if (opponentYugos === 2 && empties === 1) score += 15000;
 
-      // 3. THE FIX: The Real Open 2 Block (Empties MUST be 2!)
-      if (totalOpponentPieces === 2 && empties === 2) score += 8000;
+      // 3. THE CATERPILLAR OPEN 2 FIX
+      if (opponentYugos >= 1 && totalOpponentPieces === 2 && empties === 2)
+        score += 18000; // Block early caterpillar!
+      else if (totalOpponentPieces === 2 && empties === 2) score += 8000;
+
       if (totalOpponentPieces === 2 && empties === 1) score += 5000;
     }
   }
@@ -710,8 +813,8 @@ function tacticalMoveBonus(board, move, player, opponent) {
   return score;
 }
 
-function getUrgentBlockCells(board, threatenedPlayer) {
-  const urgentCells = new Set();
+function getCriticalCells(board, player) {
+  const cells = new Set();
   const directions = [
     [0, 1],
     [1, 0],
@@ -722,48 +825,39 @@ function getUrgentBlockCells(board, threatenedPlayer) {
   for (let row = 0; row < size; row += 1) {
     for (let col = 0; col < size; col += 1) {
       for (const [dr, dc] of directions) {
-        let oppMigos = 0;
-        let oppYugos = 0;
+        let playerCount = 0;
         let empties = 0;
         let emptyCell = null;
         let invalid = false;
 
         for (let step = 0; step < 4; step += 1) {
-          const nextRow = row + step * dr;
-          const nextCol = col + step * dc;
-          if (
-            nextRow < 0 ||
-            nextRow >= size ||
-            nextCol < 0 ||
-            nextCol >= size
-          ) {
+          const nr = row + step * dr;
+          const nc = col + step * dc;
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) {
             invalid = true;
             break;
           }
 
-          const tile = board[nextRow][nextCol];
+          const tile = board[nr][nc];
           if (!tile) {
             empties += 1;
-            emptyCell = [nextRow, nextCol];
-          } else if (tile.player === threatenedPlayer) {
-            if (tile.yugo) oppYugos += 1;
-            else oppMigos += 1;
+            emptyCell = `${nr}:${nc}`;
+          } else if (tile.player === player) {
+            // Treats both Migos and Yugos equally as pieces
+            playerCount += 1;
           } else {
-            // Window contains the other side, so it is not an urgent block line.
             invalid = true;
             break;
           }
         }
 
-        if (invalid || empties !== 1 || !emptyCell) continue;
-        if (oppYugos + oppMigos === 3) {
-          urgentCells.add(`${emptyCell[0]}:${emptyCell[1]}`);
+        if (!invalid && playerCount === 3 && empties === 1 && emptyCell) {
+          cells.add(emptyCell);
         }
       }
     }
   }
-
-  return urgentCells;
+  return cells;
 }
 
 // ==========================================
@@ -779,15 +873,31 @@ function evaluate(board, aiPlayer) {
   totalScore += myYugos * 10000;
   totalScore -= oppYugos * 12000;
 
-  // --- 2. STRING PATTERN SCANNING (The Brains) ---
-  // We extract all lines into strings to detect Misdirections, Sandwiches, and Traps
-  let allLines = extractAllLinesAsStrings(board, aiPlayer, humanPlayer);
+  // --- 2. IGO THREATS (Instant Game Over) ---
+  let myIgoThreats = getIgoThreatCells(board, aiPlayer).length;
+  let oppIgoThreats = getIgoThreatCells(board, humanPlayer).length;
+  totalScore += myIgoThreats * 100000;
+  totalScore -= oppIgoThreats * 200000;
 
+  // --- 3. GUARANTEED YUGO THREATS (The Fix!) ---
+  let myThreats = countImmediateWinsOnBoard(board, aiPlayer);
+  let oppThreats = countImmediateWinsOnBoard(board, humanPlayer);
+  totalScore += myThreats * 5000;
+  totalScore -= oppThreats * 80000; // MASSIVE PANIC: Block 3-in-a-row immediately!
+
+  // --- 4. OPEN 2s (Catch them before they become 3s!) ---
+  let myOpen2s = countOpenSequencesOnBoard(board, aiPlayer, 2);
+  let oppOpen2s = countOpenSequencesOnBoard(board, humanPlayer, 2);
+  totalScore += myOpen2s * 1500;
+  totalScore -= oppOpen2s * 40000; // SHUT DOWN Open 2s at all costs!
+
+  // --- 5. STRING PATTERN SCANNING (Sandwiches & Traps) ---
+  let allLines = extractAllLinesAsStrings(board, aiPlayer, humanPlayer);
   for (let lineStr of allLines) {
     totalScore += evaluateLineString(lineStr);
   }
 
-  // --- 3. HEATMAP ---
+  // --- 6. HEATMAP ---
   totalScore += calculateHeatmap(board, aiPlayer);
   totalScore -= calculateHeatmap(board, humanPlayer);
 
@@ -860,30 +970,36 @@ function evaluateLineString(lineStr) {
     lineStr.includes("11011")
   ) {
     score -= 500;
-  } else {
-    // STANDARD MIGO THREATS
-    if (lineStr.includes("01110")) score += 800; // Open 3
-    if (lineStr.includes("01011") || lineStr.includes("11010")) score += 800; // Broken 3
-    if (lineStr.includes("001100")) score += 250; // Open 2
   }
 
-  // AI YUGO NETWORKS & SANDWICHES (Massively Buffed!)
-  if (lineStr.includes("0333") || lineStr.includes("3330")) score += 100000;
-  if (lineStr.includes("303")) score += 45000;
-  if (lineStr.includes("3110") || lineStr.includes("0113")) score += 60000; // Anchor Extension (was 25k)
-  if (lineStr.includes("3003")) score += 20000; // Yugo Sandwich Gap (was 5k)
-  if (lineStr.includes("3103") || lineStr.includes("3013")) score += 90000; // Lethal Sandwich (was 35k)
-  if (lineStr.includes("03030") || lineStr.includes("0330")) score += 40000; // Sniper Network (was 15k)
+  // --- THE FIX: Collapse Yugos into Migos for basic threat detection ---
+  // 1 = AI, 2 = Human
+  const simpleStr = lineStr.replace(/3/g, "1").replace(/4/g, "2");
 
-  // =====================================
-  // OPPONENT PENALTIES (Defensive Blocks)
-  // =====================================
-  if (lineStr.includes("02220")) score -= 3000; // Opp Open 3
-  if (lineStr.includes("02022") || lineStr.includes("22020")) score -= 3000; // Opp Broken 3
-  if (lineStr.includes("002200")) score -= 900; // Opp Open 2
+  if (simpleStr.includes("01110")) score += 1500; // AI Open 3
+  if (simpleStr.includes("01011") || simpleStr.includes("11010")) score += 800; // AI Broken 3
+  if (simpleStr.includes("001100")) score += 250; // AI Open 2
+
+  if (simpleStr.includes("02220")) score -= 5000; // Opp Open 3 (Massive penalty)
+  if (simpleStr.includes("02022") || simpleStr.includes("22020")) score -= 3000; // Opp Broken 3
+  if (simpleStr.includes("002200")) score -= 900; // Opp Open 2
+
+  // --- NEW: THE CATERPILLAR DEFENSE (Yugos are reusable!) ---
+  // 4 = Opponent Yugo, 2 = Opponent Migo
+  if (lineStr.includes("0240") || lineStr.includes("0420")) score -= 25000; // Yugo-backed Open 2
+  if (lineStr.includes("0224") || lineStr.includes("4220")) score -= 60000; // Yugo-backed Open 3
+  if (lineStr.includes("0242") || lineStr.includes("2420")) score -= 60000;
+  if (lineStr.includes("0244") || lineStr.includes("4420")) score -= 150000; // 2 Yugos + Migo (Lethal)
+
+  // --- AI'S OWN CATERPILLAR OFFENSE ---
+  // 3 = AI Yugo, 1 = AI Migo
+  if (lineStr.includes("0130") || lineStr.includes("0310")) score += 15000;
+  if (lineStr.includes("0113") || lineStr.includes("3110")) score += 40000;
+  if (lineStr.includes("0131") || lineStr.includes("1310")) score += 40000;
+  if (lineStr.includes("0133") || lineStr.includes("3310")) score += 90000;
 
   // OPPONENT YUGO NETWORKS (Terrifying threats)
-  if (lineStr.includes("0440")) score -= 40000;
+  if (lineStr.includes("0440")) score -= 100000;
   if (lineStr.includes("2440") || lineStr.includes("0442")) score -= 50000;
   if (lineStr.includes("2444") || lineStr.includes("4442")) score -= 150000;
   if (lineStr.includes("0444") || lineStr.includes("4440")) score -= 150000;
@@ -988,33 +1104,32 @@ function wouldCreateLongLineOnBoard(board, row, col, player) {
   ];
 
   for (const [dr, dc] of directions) {
-    let count = 1; // The piece being placed counts as 1
+    let count = 1;
 
-    // Check positive direction
-    for (let i = 1; i < 8; i++) {
+    // Check positive
+    for (let i = 1; i < 5; i++) {
+      // Check up to 5
       const nr = row + i * dr;
       const nc = col + i * dc;
       if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
       const tile = board[nr][nc];
-
-      // THE FIX: Stop counting if it is empty, opponent's, OR A YUGO!
-      // The Overline restriction only applies to Migos.
-      if (!tile || tile.player !== player || tile.yugo) break;
-      count++;
+      // IF it's your own Migo, it increases the count.
+      // If it's a Yugo, it DOES NOT break the line, but it IS part of the line.
+      if (tile && tile.player === player) count++;
+      else break;
     }
 
-    // Check negative direction
-    for (let i = 1; i < 8; i++) {
+    // Check negative
+    for (let i = 1; i < 5; i++) {
       const nr = row - i * dr;
       const nc = col - i * dc;
       if (nr < 0 || nr >= size || nc < 0 || nc >= size) break;
       const tile = board[nr][nc];
-
-      if (!tile || tile.player !== player || tile.yugo) break;
-      count++;
+      if (tile && tile.player === player) count++;
+      else break;
     }
 
-    if (count > 4) return true;
+    if (count >= 5) return true; // CRITICAL: Stop any move that creates 5+
   }
   return false;
 }
@@ -1124,4 +1239,64 @@ function countPointsOnBoard(board, player) {
     }
   }
   return count;
+}
+
+// kalau ada 3 yugo dan 1 kosong
+function getIgoThreatCells(board, player) {
+  const threatCells = [];
+  const directions = [
+    [0, 1], // Horizontal
+    [1, 0], // Vertical
+    [1, 1], // Diagonal Down-Right
+    [1, -1], // Diagonal Down-Left
+  ];
+
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      for (const [dr, dc] of directions) {
+        let yugoCount = 0;
+        let empties = 0;
+        let emptyCell = null;
+        let invalid = false;
+
+        // Slide a 4-square window
+        for (let step = 0; step < 4; step++) {
+          const nr = row + step * dr;
+          const nc = col + step * dc;
+
+          // Out of bounds check
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) {
+            invalid = true;
+            break;
+          }
+
+          const tile = board[nr][nc];
+          if (!tile) {
+            empties++;
+            emptyCell = { row: nr, col: nc };
+          } else if (tile.player === player && tile.yugo) {
+            yugoCount++;
+          } else {
+            // Window contains opponent's piece or a standard Migo
+            invalid = true;
+            break;
+          }
+        }
+
+        // If the window is a valid instant-win threat
+        if (!invalid && yugoCount === 3 && empties === 1 && emptyCell) {
+          // Fast deduplication (No JSON.stringify!)
+          if (
+            !threatCells.some(
+              (c) => c.row === emptyCell.row && c.col === emptyCell.col,
+            )
+          ) {
+            threatCells.push(emptyCell);
+          }
+        }
+      }
+    }
+  }
+
+  return threatCells;
 }

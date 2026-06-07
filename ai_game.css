@@ -288,7 +288,7 @@ body {
   position: relative;
   border-radius: 18px;
   border: 1px solid var(--grid);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgb(168, 99, 99);
   cursor: pointer;
   transition:
     transform 0.12s ease,
