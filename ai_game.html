@@ -47,7 +47,7 @@
             min="1"
             max="8"
             step="1"
-            value="6"
+            value="2"
           />
         </div>
 
@@ -418,6 +418,7 @@
         state.board[row][col] = { player, yugo: false };
 
         let notation = `${String.fromCharCode(97 + col)}${size - row}`;
+
         pushLog(`${players[player].name} placed at ${cellName(row, col)}`);
 
         playSound(`${players[player].color}.mp3`);
