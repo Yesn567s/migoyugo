@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Migoyugo - How to Play</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-base: #05080f;
+        --panel-bg: rgba(12, 18, 30, 0.75);
+        --card-bg: rgba(255, 255, 255, 0.03);
+        --panel-border: rgba(0, 229, 255, 0.2);
+        --text-main: #ffffff;
+        --text-muted: #8ba3c7;
+        --accent-cyan: #00e5ff;
+        --accent-cyan-glow: rgba(0, 229, 255, 0.4);
+        --accent-red: #ff3366;
+        --font-title: "Orbitron", sans-serif;
+        --font-ui: "Rajdhani", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-base);
+        color: var(--text-main);
+        font-family: var(--font-ui);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        background-image: radial-gradient(
+          circle at 50% 0%,
+          rgba(0, 229, 255, 0.1),
+          transparent 50%
+        );
+      }
+
+      .loading-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+        background:
+          radial-gradient(
+            circle at top,
+            rgba(0, 229, 255, 0.18),
+            transparent 42%
+          ),
+          linear-gradient(145deg, #05080f 0%, #090d18 50%, #05080f 100%);
+        color: var(--text-main);
+        transition:
+          opacity 0.45s ease,
+          visibility 0.45s ease;
+      }
+
+      .loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .loading-spinner {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.12);
+        border-top-color: var(--accent-cyan);
+        box-shadow: 0 0 24px rgba(0, 229, 255, 0.2);
+        animation: spin 0.9s linear infinite;
+      }
+
+      .loading-text {
+        font-family: var(--font-title);
+        letter-spacing: 0.25em;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: var(--accent-cyan);
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* --- 1. VIDEO BACKGROUND --- */
+      .bg-video-container {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background-color: var(--bg-base);
+      }
+
+      .bg-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      /* --- BACKGROUND DOT GRID --- */
+      .bg-grid {
+        position: fixed;
+        inset: 0;
+        background-size: 40px 40px;
+        background-image: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.05) 1px,
+          transparent 1px
+        );
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      /* --- MAIN CONTAINER --- */
+      .system-ui {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        height: 90vh;
+        background: var(--panel-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--panel-border);
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 30px 80px rgba(0, 0, 0, 0.8),
+          inset 0 0 40px rgba(0, 229, 255, 0.03);
+        overflow: hidden; /* Hide main overflow, scroll internal content */
+      }
+
+      /* --- HEADER --- */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 30px 40px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
+      }
+
+      .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0, 229, 255, 0.05);
+        border: 1px solid var(--accent-cyan);
+        color: var(--accent-cyan);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-family: var(--font-title);
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 2px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .btn-back:hover {
+        background: var(--accent-cyan);
+        color: #000;
+        box-shadow: 0 0 20px var(--accent-cyan-glow);
+      }
+
+      .page-title {
+        font-family: var(--font-title);
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      }
+
+      /* --- CONTENT AREA (SCROLLABLE) --- */
+      .content-scroll {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+      }
+
+      /* Custom Scrollbar */
+      .content-scroll::-webkit-scrollbar {
+        width: 8px;
+      }
+      .content-scroll::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      .content-scroll::-webkit-scrollbar-thumb {
+        background: rgba(0, 229, 255, 0.3);
+        border-radius: 10px;
+      }
+      .content-scroll::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-cyan);
+      }
+
+      /* --- RULE SECTIONS --- */
+      .rule-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: center;
+        background: var(--card-bg);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 40px;
+      }
+
+      .rule-section.full {
+        grid-template-columns: 1fr;
+      }
+
+      .rule-section.reverse {
+        /* On desktop, text on right, image on left */
+        direction: rtl;
+      }
+      .rule-section.reverse > * {
+        direction: ltr;
+      }
+
+      .text-content h2 {
+        font-family: var(--font-title);
+        color: var(--accent-cyan);
+        font-size: 24px;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .text-content ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .text-content li {
+        font-size: 18px;
+        line-height: 1.6;
+        color: var(--text-muted);
+        position: relative;
+        padding-left: 24px;
+      }
+
+      .text-content li::before {
+        content: ">";
+        position: absolute;
+        left: 0;
+        top: 2px;
+        color: var(--accent-cyan);
+        font-family: var(--font-title);
+        font-weight: bold;
+      }
+
+      .highlight {
+        color: #fff;
+        font-weight: 600;
+      }
+      .alert-text {
+        color: var(--accent-red);
+        font-weight: 600;
+      }
+
+      /* --- CSS DIAGRAMS (IMAGES) --- */
+      .visual-box {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.02);
+        min-height: 250px;
+      }
+
+      /* 1. Board Diagram */
+      .diagram-board {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 2px;
+        width: 200px;
+        height: 200px;
+        padding: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--accent-cyan);
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+      }
+      .diagram-board div {
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .diagram-board .highlight-cell {
+        background: rgba(0, 229, 255, 0.3);
+      }
+
+      /* 2. Pieces Diagram (Migo -> Yugo) */
+      .diagram-pieces {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+      }
+      .piece-demo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        color: var(--text-muted);
+        font-family: var(--font-title);
+        font-size: 12px;
+        letter-spacing: 2px;
+      }
+      .migo-shape {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #ffffff, #888);
+        box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+      }
+      .yugo-shape {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #0a101d, #1a2639);
+        border: 2px solid var(--accent-cyan);
+        box-shadow: 0 0 20px var(--accent-cyan-glow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .yugo-dot {
+        width: 16px;
+        height: 16px;
+        background: var(--accent-cyan);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-cyan);
+      }
+      .arrow {
+        font-size: 24px;
+        color: rgba(255, 255, 255, 0.2);
+      }
+
+      /* 3. Winning Diagram */
+      .diagram-win {
+        display: flex;
+        gap: 5px;
+      }
+      .win-yugo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid var(--accent-cyan);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 229, 255, 0.1);
+      }
+      .win-yugo::after {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background: var(--accent-cyan);
+        border-radius: 50%;
+      }
+      .win-line {
+        position: absolute;
+        width: 180px;
+        height: 4px;
+        background: #fff;
+        box-shadow: 0 0 15px #fff;
+        z-index: 2;
+      }
+
+      /* --- RESPONSIVE DESIGN --- */
+      @media (max-width: 900px) {
+        .rule-section,
+        .rule-section.reverse {
+          grid-template-columns: 1fr;
+          direction: ltr; /* Reset reverse on mobile */
+          padding: 30px 20px;
+        }
+        .page-title {
+          font-size: 20px;
+        }
+        header {
+          padding: 20px;
+        }
+        .content-scroll {
+          padding: 20px;
+        }
+      }
+
+      @media (max-width: 500px) {
+        header {
+          flex-direction: column;
+          gap: 15px;
+          align-items: flex-start;
+        }
+        .text-content li {
+          font-size: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-screen" id="loadingScreen" aria-live="polite">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading...</div>
+    </div>
+
+    <div class="bg-video-container">
+      <video class="bg-video" autoplay loop muted playsinline preload="auto">
+        <source src="./assets/video/smoke.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+    <div class="bg-grid"></div>
+
+    <div class="system-ui">
+      <header>
+        <a href="index.html" class="btn-back"> <span>&#9664;</span> MENU </a>
+        <div class="page-title">Data Archives: Rules</div>
+      </header>
+
+      <div class="content-scroll">
+        <div class="rule-section full">
+          <div class="text-content">
+            <h2>01 // THE GAME</h2>
+            <ul>
+              <li>Migoyugo is a board game for two players.</li>
+              <li>
+                It is an abstract strategy game that features
+                <span class="highlight">complete information</span> (no reliance
+                on luck or chance).
+              </li>
+              <li>
+                Win by creating an <strong>Igo</strong> (an unbroken line of 4
+                Yugos) or have a higher Yugo count with a <strong>Wego</strong>.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <div class="text-content">
+            <h2>02 // THE BOARD</h2>
+            <ul>
+              <li>
+                The Migoyugo board is an
+                <span class="highlight">8 X 8 grid of 64 squares</span>
+                (typically all the same color).
+              </li>
+              <li>Rows are numbered 1-8 from bottom to top.</li>
+              <li>Columns are designated A-H from left to right.</li>
+            </ul>
+          </div>
+          <div class="visual-box">
+            <div class="diagram-board">
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div class="highlight-cell"></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div class="highlight-cell"></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div class="highlight-cell"></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-section reverse">
+          <div class="text-content">
+            <h2>03 // PIECES: MIGO & YUGO</h2>
+            <ul>
+              <li>
+                <span class="highlight">The Migo:</span> White always moves
+                first. Players take alternating turns placing a piece (Migo) on
+                any open square.
+              </li>
+              <li>
+                <span class="highlight">The Yugo:</span> When you form one
+                unbroken line of exactly 4 pieces of your own color, the last
+                piece placed becomes a Yugo, represented by a dot in the center.
+              </li>
+              <li>
+                When a Yugo is created, all other Migos in that line are
+                removed.
+              </li>
+              <li>
+                <strong
+                  >Yugos can never be moved or removed from the board.</strong
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="visual-box">
+            <div class="diagram-pieces">
+              <div class="piece-demo">
+                <div class="migo-shape"></div>
+                <span>MIGO</span>
+              </div>
+              <div class="arrow">&#10230;</div>
+              <div class="piece-demo">
+                <div class="yugo-shape"><div class="yugo-dot"></div></div>
+                <span>YUGO</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="rule-section full"
+          style="
+            border-color: rgba(255, 51, 102, 0.3);
+            background: rgba(255, 51, 102, 0.02);
+          "
+        >
+          <div class="text-content">
+            <h2 style="color: var(--accent-red)">
+              04 // RESTRICTION: NO LONG LINES
+            </h2>
+            <ul>
+              <li>
+                <span class="alert-text"
+                  >At no time may either player create an unbroken line of more
+                  than 4 in a row</span
+                >
+                of any combination of Migos and/or Yugos of their own color.
+              </li>
+              <li>
+                Note: Multiple intersecting lines of 4 are permitted, but a
+                single line of 5 or more is strictly illegal.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <div class="text-content">
+            <h2>05 // WINNING CONDITIONS</h2>
+            <ul>
+              <li>
+                <span class="highlight">THE IGO (Instant Win):</span> Form an
+                unbroken line (horizontal, vertical or diagonal) of exactly 4
+                Yugos of your own color.
+              </li>
+              <li>
+                <span class="highlight">THE WEGO (Count Win):</span> If you are
+                unable to make a legal move, or if all 64 squares are filled,
+                the game ends. The player with the most Yugos wins. (Draw if
+                tied).
+              </li>
+              <li>
+                If a player resigns, or their clock expires, the opponent is
+                declared the winner.
+              </li>
+            </ul>
+          </div>
+          <div class="visual-box" style="position: relative">
+            <div class="diagram-win">
+              <div class="win-yugo"></div>
+              <div class="win-yugo"></div>
+              <div class="win-yugo"></div>
+              <div class="win-yugo"></div>
+            </div>
+            <div class="win-line"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const loadingScreen = document.getElementById("loadingScreen");
+      const smokeVideo = document.querySelector(".bg-video");
+
+      function hideLoadingScreen() {
+        loadingScreen.classList.add("hidden");
+      }
+
+      function revealVideoWhenReady() {
+        if (smokeVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          hideLoadingScreen();
+          return;
+        }
+
+        const onReady = () => {
+          smokeVideo.removeEventListener("loadeddata", onReady);
+          smokeVideo.removeEventListener("canplay", onReady);
+          hideLoadingScreen();
+        };
+
+        smokeVideo.addEventListener("loadeddata", onReady, { once: true });
+        smokeVideo.addEventListener("canplay", onReady, { once: true });
+        window.setTimeout(hideLoadingScreen, 4000);
+      }
+
+      revealVideoWhenReady();
+    </script>
+  </body>
+</html>

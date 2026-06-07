@@ -6,553 +6,680 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Migoyugo - Main Menu</title>
+    <title>Migoyugo - System Interface</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800;900&family=Rajdhani:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
       :root {
-        --bg: #0b1020;
-        --panel: rgba(12, 18, 40, 0.82);
-        --panel-border: rgba(255, 255, 255, 0.1);
-        --text: #f4f7ff;
-        --muted: #9aa7c7;
-        --white: #f5f7ff;
-        --black: #14181f;
-        --white-glow: rgba(248, 250, 255, 0.55);
-        --black-glow: rgba(9, 12, 18, 0.55);
-        --accent: #7dd3fc;
-        --accent-2: #f9a8d4;
+        --bg-base: #05080f;
+        --panel-bg: rgba(12, 18, 30, 0.65);
+        --panel-border: rgba(0, 229, 255, 0.15);
+        --text-main: #ffffff;
+        --text-muted: #6b829e;
+        --accent-cyan: #00e5ff;
+        --accent-cyan-glow: rgba(0, 229, 255, 0.4);
+        --font-title: "Orbitron", sans-serif;
+        --font-ui: "Rajdhani", sans-serif;
       }
 
       * {
         box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      @keyframes fadeOut {
-        from {
-          opacity: 1;
-        }
-        to {
-          opacity: 0;
-        }
+        margin: 0;
+        padding: 0;
+        user-select: none;
       }
 
       body {
-        margin: 0;
-        min-height: 100svh;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background:
-          radial-gradient(
-            circle at top left,
-            rgba(125, 211, 252, 0.18),
-            transparent 40%
-          ),
-          radial-gradient(
-            circle at bottom right,
-            rgba(249, 168, 212, 0.16),
-            transparent 40%
-          ),
-          linear-gradient(145deg, #060916 0%, #0b1020 45%, #111832 100%);
-        color: var(--text);
-        display: grid;
-        place-items: center;
-        padding: clamp(12px, 4vw, 24px);
-        background-image: url("assets/img/backgroundb.png");
-        background-repeat: no-repeat;
-        background-size: cover;
-        animation: fadeIn 0.8s ease-in;
-      }
-
-      @media (orientation: portrait) and (max-width: 900px) {
-        body {
-          background-image: url("assets/img/Verticalbackground.png");
-          background-position: center center;
-        }
-      }
-
-      body.fade-out {
-        animation: fadeOut 0.6s ease-out forwards;
-      }
-
-      .menu-shell {
-        width: 100%;
-        max-width: 460px;
-        perspective: 1000px;
-      }
-
-      .panel {
-        background: var(--panel);
-        border: 1px solid var(--panel-border);
-        backdrop-filter: blur(16px);
-        border-radius: clamp(20px, 6vw, 28px);
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
-        padding: clamp(32px, 8vw, 48px) clamp(20px, 6vw, 32px);
-        text-align: center;
+        background-color: var(--bg-base);
+        color: var(--text-main);
+        font-family: var(--font-ui);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
         position: relative;
       }
 
-      /* Logo & Header Section */
-      .logo-wrap {
-        margin-bottom: clamp(24px, 8vw, 40px);
-      }
-
-      .decorative-pieces {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        margin-bottom: 24px;
-      }
-
-      .demo-piece {
-        width: clamp(40px, 10vw, 48px);
-        height: clamp(40px, 10vw, 48px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        animation: float 4s ease-in-out infinite;
-      }
-
-      .demo-piece.white {
-        background: linear-gradient(180deg, #ffffff, #dbe5ff);
-        box-shadow: 0 0 24px var(--white-glow);
-      }
-
-      .demo-piece.black {
-        background: linear-gradient(180deg, #2b3442, #0a0e15);
-        box-shadow: 0 0 24px var(--black-glow);
-        animation-delay: -2s;
-      }
-
-      .demo-piece .inner-dot {
-        width: 18%;
-        height: 18%;
-        border-radius: 50%;
-        background: #ef4444;
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-8px);
-        }
-      }
-
-      h1 {
-        margin: 0;
-        font-size: clamp(2rem, 8vw, 3.5rem);
-        letter-spacing: -0.05em;
-        line-height: 1;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 4px 12px rgba(125, 211, 252, 0.2));
-      }
-
-      p.subtitle {
-        margin: 12px 0 0;
-        color: var(--muted);
-        font-size: clamp(0.9rem, 3vw, 1.05rem);
-        line-height: 1.5;
-      }
-
-      /* Buttons */
-      .menu-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        border-radius: 999px;
-        padding: clamp(14px, 4vw, 16px) 24px;
-        font: inherit;
-        font-weight: 700;
-        font-size: clamp(1rem, 3vw, 1.1rem);
-        text-decoration: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .action.primary {
-        color: #09101e;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        box-shadow: 0 12px 30px rgba(125, 211, 252, 0.2);
-      }
-
-      .action.primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 16px 40px rgba(125, 211, 252, 0.3);
-      }
-
-      .action.secondary {
-        color: var(--text);
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .action.secondary:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.1);
-        transform: translateY(-2px);
-      }
-
-      .action:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .footer {
-        margin-top: clamp(20px, 6vw, 24px);
-        font-size: 0.8rem;
-        color: rgba(154, 167, 199, 0.6);
-      }
-
-      /* Global Rules Modal to prevent mobile overflow */
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(6, 9, 22, 0.8);
-        backdrop-filter: blur(8px);
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: clamp(12px, 4vw, 24px);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-      }
-
-      .modal-backdrop.active {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      .modal-box {
-        background: var(--panel);
-        border: 1px solid var(--panel-border);
-        border-radius: clamp(20px, 6vw, 28px);
-        padding: clamp(20px, 6vw, 32px);
-        width: 100%;
-        max-width: 580px; /* Made slightly wider to accommodate text comfortably */
-        max-height: 90svh;
-        display: flex;
-        flex-direction: column;
-        transform: translateY(20px) scale(0.95);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-
-      .modal-backdrop.active .modal-box {
-        transform: translateY(0) scale(1);
-      }
-
-      .modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        flex-shrink: 0;
-      }
-
-      .modal-header h2 {
-        margin: 0;
-        font-size: clamp(1.2rem, 5vw, 1.5rem);
-      }
-
-      .close-btn {
-        background: rgba(255, 255, 255, 0.08);
-        border: 0;
-        color: #fff;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: grid;
-        place-items: center;
-        font-size: 1.2rem;
-        transition: background 0.2s;
-        flex-shrink: 0;
-      }
-
-      .close-btn:hover {
-        background: rgba(255, 255, 255, 0.15);
-      }
-
-      .modal-content {
-        text-align: left;
-        overflow-y: auto;
-        padding-right: 12px;
-      }
-
-      /* Custom scrollbar for modal */
-      .modal-content::-webkit-scrollbar {
-        width: 6px;
-      }
-      .modal-content::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 10px;
-      }
-      .modal-content::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-      }
-
-      /* Text formatting for rules */
-      .modal-content h3 {
-        color: var(--accent);
-        font-size: clamp(1rem, 4vw, 1.15rem);
-        margin: 20px 0 10px 0;
-        letter-spacing: 0.02em;
-      }
-
-      .modal-content h3:first-child {
-        margin-top: 0;
-      }
-
-      .modal-content ul {
-        margin: 0 0 16px 0;
-        padding-left: 20px;
-      }
-
-      .modal-content li {
-        color: var(--muted);
-        line-height: 1.5;
-        font-size: clamp(0.85rem, 3.5vw, 0.95rem);
-        margin-bottom: 8px;
-      }
-
-      .modal-content li:last-child {
-        margin-bottom: 0;
-      }
-
-      /* Loading Screen */
       .loading-screen {
         position: fixed;
         inset: 0;
-        background: linear-gradient(
-          145deg,
-          #060916 0%,
-          #0b1020 45%,
-          #111832 100%
-        );
-        display: none;
+        z-index: 20;
+        display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 1000;
         flex-direction: column;
-        gap: 24px;
+        gap: 16px;
+        background:
+          radial-gradient(
+            circle at top,
+            rgba(0, 229, 255, 0.18),
+            transparent 42%
+          ),
+          linear-gradient(145deg, #05080f 0%, #090d18 50%, #05080f 100%);
+        color: var(--text-main);
+        transition:
+          opacity 0.45s ease,
+          visibility 0.45s ease;
       }
 
-      .loading-screen.active {
-        display: flex;
+      .loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
       }
 
-      .spinner {
-        width: 60px;
-        height: 60px;
-        border: 3px solid rgba(125, 211, 252, 0.2);
-        border-top-color: #7dd3fc;
-        border-right-color: #f9a8d4;
+      .loading-spinner {
+        width: 52px;
+        height: 52px;
         border-radius: 50%;
-        animation: spin 1.2s linear infinite;
+        border: 3px solid rgba(255, 255, 255, 0.12);
+        border-top-color: var(--accent-cyan);
+        box-shadow: 0 0 24px rgba(0, 229, 255, 0.2);
+        animation: spin 0.9s linear infinite;
+      }
+
+      .loading-text {
+        font-family: var(--font-title);
+        letter-spacing: 0.25em;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: var(--accent-cyan);
       }
 
       @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
         to {
           transform: rotate(360deg);
         }
       }
 
-      .loading-text {
-        color: var(--muted);
-        font-size: 0.95rem;
-        letter-spacing: 0.05em;
+      /* --- 1. VIDEO BACKGROUND --- */
+      .bg-video-container {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        background-color: var(--bg-base); /* Fallback color */
+      }
+
+      .bg-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.6; /* Atur opacity agar video tidak mengalahkan UI */
+        pointer-events: none;
+      }
+
+      /* --- 2. OVERLAY DOT GRID (Diletakkan di atas video agar cyberpunk) --- */
+      .bg-grid {
+        position: absolute;
+        inset: 0;
+        background-size: 40px 40px;
+        background-image: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.05) 1px,
+          transparent 1px
+        );
+        z-index: 1;
+        animation: pulseGrid 8s linear infinite alternate;
+        pointer-events: none;
+      }
+
+      @keyframes pulseGrid {
+        0% {
+          opacity: 0.4;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      /* --- 3. MAIN UI CONTAINER --- */
+      .system-ui {
+        position: relative;
+        z-index: 2; /* Harus di atas video dan grid */
+        width: 90vw;
+        max-width: 1400px;
+        height: auto;
+        min-height: 85vh;
+        max-height: 95vh;
+        background: var(--panel-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--panel-border);
+        border-radius: 24px;
+        display: flex;
+        flex-direction: column;
+        padding: clamp(24px, 4vw, 60px);
+        box-shadow:
+          0 30px 80px rgba(0, 0, 0, 0.6),
+          inset 0 0 40px rgba(0, 229, 255, 0.05);
+        overflow-y: auto;
+      }
+
+      .system-ui::-webkit-scrollbar {
+        width: 0px;
+      }
+
+      /* --- HEADER & CONTROLS --- */
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: clamp(10px, 1.5vw, 14px);
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: var(--accent-cyan);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 20px;
+        margin-bottom: clamp(20px, 4vw, 40px);
+        flex-wrap: wrap; /* Mencegah patah di layar kecil */
+        gap: 15px;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        background-color: var(--accent-cyan);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-cyan-glow);
+        animation: blink 2s infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* Music Toggle Button */
+      .music-btn {
+        background: rgba(0, 229, 255, 0.05);
+        border: 1px solid var(--accent-cyan);
+        color: var(--accent-cyan);
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        border-radius: 50%;
+        font-family: var(--font-title);
+        font-weight: 600;
+        font-size: 18px;
+        letter-spacing: 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        outline: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .music-btn:hover {
+        background: rgba(0, 229, 255, 0.2);
+        box-shadow: 0 0 15px var(--accent-cyan-glow);
+      }
+
+      .music-btn.active {
+        background: var(--accent-cyan);
+        color: #000;
+        box-shadow: 0 0 20px var(--accent-cyan-glow);
+      }
+
+      .music-btn.muted::after {
+        content: "";
+        position: absolute;
+        width: 24px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        transform: rotate(-45deg);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.12);
+      }
+
+      .meta-info {
+        color: var(--text-muted);
+        display: flex;
+        gap: 20px;
+      }
+
+      /* --- MAIN CONTENT --- */
+      main {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: clamp(30px, 5vw, 60px);
+        flex-grow: 1;
+      }
+
+      .left-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .tagline {
+        color: var(--accent-cyan);
+        font-size: clamp(12px, 2vw, 16px);
+        font-weight: 600;
+        letter-spacing: 4px;
+        margin-bottom: -5px;
+        text-transform: uppercase;
+      }
+
+      .game-title {
+        font-family: var(--font-title);
+        font-size: clamp(50px, 10vw, 130px);
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -2px;
+        margin-bottom: clamp(30px, 5vw, 50px);
+        text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+      }
+
+      nav {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(15px, 3vw, 25px);
+      }
+
+      .nav-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 20px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: clamp(18px, 3vw, 24px);
+        font-weight: 600;
+        letter-spacing: 3px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: fit-content;
+      }
+
+      .nav-item::before {
+        content: "";
+        display: block;
+        width: 30px;
+        height: 2px;
+        background-color: var(--text-muted);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      .nav-item:hover {
+        color: var(--text-main);
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+      }
+      .nav-item:hover::before {
+        width: 70px;
+        background-color: var(--accent-cyan);
+        box-shadow: 0 0 10px var(--accent-cyan-glow);
+      }
+
+      .right-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: clamp(20px, 4vw, 40px);
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        padding-left: clamp(20px, 4vw, 60px);
+      }
+
+      .info-block h3 {
+        font-family: var(--font-title);
+        font-size: clamp(16px, 2vw, 18px);
+        letter-spacing: 2px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .info-block p {
+        color: var(--text-muted);
+        font-size: clamp(14px, 1.5vw, 16px);
+        line-height: 1.6;
+        font-weight: 500;
+      }
+
+      .icon-igo {
+        display: flex;
+        gap: 4px;
+      }
+      .icon-igo span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-main);
+      }
+      .icon-wego {
+        width: 14px;
+        height: 14px;
+        border: 2px solid var(--accent-cyan);
+        transform: rotate(45deg);
+      }
+
+      /* --- 8x8 Mini Grid --- */
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 3px;
+        width: min(100%, 280px);
+        margin-top: 10px;
+        opacity: 0.8;
+      }
+
+      .m-cell {
+        aspect-ratio: 1;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 2px;
+        transition: all 0.5s ease;
+      }
+
+      .m-cell.active-cyan {
+        background: var(--accent-cyan);
+        box-shadow: 0 0 15px var(--accent-cyan-glow);
+      }
+      .m-cell.active-white {
+        background: #fff;
+      }
+
+      /* --- FOOTER --- */
+      footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: clamp(30px, 5vw, 50px);
+        padding-top: 20px;
+      }
+
+      .dev-info {
+        font-size: clamp(10px, 1.5vw, 12px);
+        color: var(--text-muted);
+        letter-spacing: 2px;
+      }
+      .dev-info strong {
+        display: block;
+        color: var(--text-main);
+        font-size: clamp(12px, 2vw, 16px);
+        letter-spacing: 4px;
+        margin-top: 4px;
+      }
+
+      .server-info {
+        text-align: right;
+        font-size: clamp(10px, 1.5vw, 12px);
+        color: var(--text-muted);
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .latency {
+        color: var(--accent-cyan);
+        font-weight: 700;
+      }
+      .radar-circle {
+        width: 40px;
+        height: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .radar-circle::after {
+        content: "";
+        width: 4px;
+        height: 4px;
+        background: var(--accent-cyan);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-cyan);
+      }
+
+      /* --- MOBILE RESPONSIVE --- */
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+        .right-col {
+          border-left: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding-left: 0;
+          padding-top: 30px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .system-ui {
+          padding: 24px;
+        }
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+        }
+        .meta-info {
+          flex-direction: column;
+          gap: 5px;
+        }
+        footer {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 20px;
+        }
+        .server-info {
+          flex-direction: row-reverse;
+          text-align: left;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="menu-shell">
-      <div class="panel">
-        <div class="logo-wrap">
-          <div class="decorative-pieces">
-            <div class="demo-piece white"><div class="inner-dot"></div></div>
-            <div class="demo-piece black"><div class="inner-dot"></div></div>
-          </div>
-          <h1>Migoyugo</h1>
-          <p class="subtitle">The strategic game of connections</p>
-        </div>
-
-        <div class="menu-actions">
-          <a href="migoyugo.html" class="action primary">Play Local 2-Player</a>
-          <a href="ai_game.html" class="action secondary" id="btnPlayAI">
-            Play Against AI
-          </a>
-          <button class="action secondary" id="btnRules">How to Play</button>
-        </div>
-
-        <div class="footer">v1.0.0 &copy; Migoyugo Studio</div>
-      </div>
-    </div>
-
-    <!-- Fixed Rules Modal Backdrop -->
-    <div class="modal-backdrop" id="rulesModal">
-      <div class="modal-box">
-        <div class="modal-header">
-          <h2>Migoyugo Game Rules</h2>
-          <button class="close-btn" id="btnCloseRules" aria-label="Close rules">
-            &times;
-          </button>
-        </div>
-        <div class="modal-content">
-          <h3>The Game</h3>
-          <ul>
-            <li>Migoyugo is a board game for two players</li>
-            <li>
-              It is an abstract strategy game that features complete information
-              (no reliance on luck or chance)
-            </li>
-            <li>
-              Win by creating an Igo (an unbroken line of 4 Yugos) or have a
-              higher Yugo count with a Wego
-            </li>
-          </ul>
-
-          <h3>The Board</h3>
-          <ul>
-            <li>
-              The Migoyugo board is an 8 X 8 grid of 64 squares (typically all
-              the same color) with rows numbered 1-8 from bottom to top and
-              columns designated A-H from left to right
-            </li>
-          </ul>
-
-          <h3>The Migo</h3>
-          <ul>
-            <li>
-              White always moves first by placing a piece, called a Migo, on any
-              square on the board
-            </li>
-            <li>
-              Players take alternating turns placing Migos on any open square*
-              (see No Long Lines)
-            </li>
-          </ul>
-
-          <h3>The Yugo</h3>
-          <ul>
-            <li>
-              When you form one unbroken line of exactly 4 pieces of your own
-              color, or multiple intersecting lines (horizontal, vertical or
-              diagonal), the last piece placed becomes a Yugo, represented by a
-              dot in the center
-            </li>
-            <li>
-              When a Yugo is created, all Migos in the line(s) are removed,
-              leaving behind only the Yugo created and any other Yugos in the
-              line(s)
-            </li>
-            <li>Yugos can never be moved or removed from the board</li>
-          </ul>
-
-          <h3>No Long Lines</h3>
-          <ul>
-            <li>
-              At no time may either player create an unbroken line of more than
-              4 in a row of any combination of Migos and/or Yugos of their own
-              color (multiple intersecting lines are permitted)
-            </li>
-          </ul>
-
-          <h3>Winning</h3>
-          <ul>
-            <li>
-              There are two distinct end game conditions – an Igo and a Wego
-            </li>
-            <li>
-              Form an unbroken line (horizontal, vertical or diagonal) of
-              exactly 4 Yugos of your own color and you win instantly with an
-              Igo
-            </li>
-            <li>
-              If on your turn, you are unable to make a legal move, or if all 64
-              squares are filled, the game ends with a Wego, and the player with
-              the most Yugos is declared the winner. If both players have the
-              same number of Yugos, the game is drawn
-            </li>
-            <li>If a player resigns, the opponent is declared the winner</li>
-            <li>
-              If players compete using a clock, a player is declared the winner
-              if the opponent's clock expires
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
-      <div class="spinner"></div>
+    <div class="loading-screen" id="loadingScreen" aria-live="polite">
+      <div class="loading-spinner"></div>
       <div class="loading-text">Loading...</div>
     </div>
 
+    <div class="bg-video-container">
+      <video class="bg-video" autoplay loop muted playsinline preload="auto">
+        <source src="./assets/video/smoke.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+    <audio id="bg-music" loop>
+      <source
+        src="./assets/sfx/Monkeys-Spinning-Monkeys(chosic.com).mp3"
+        type="audio/mpeg"
+      />
+    </audio>
+
+    <div class="bg-grid"></div>
+
+    <div class="system-ui">
+      <header>
+        <div class="status">
+          <div class="status-dot"></div>
+          SYSTEM ONLINE
+        </div>
+
+        <div class="meta-info">
+          <span>VERSION 1.0.4</span>
+          <span>BUILD: STABLE</span>
+        </div>
+
+        <button
+          id="music-toggle"
+          class="music-btn muted"
+          aria-label="Enable sound"
+          aria-pressed="false"
+          title="Enable sound"
+        >
+          <span id="music-icon" aria-hidden="true">🔊</span>
+        </button>
+      </header>
+
+      <main>
+        <div class="left-col">
+          <div class="tagline">The Abstract Strategy Game</div>
+          <h1 class="game-title">MIGOYUGO</h1>
+
+          <nav>
+            <a href="migoyugo.html" class="nav-item">Play Local</a>
+            <a href="ai_game.html" class="nav-item">Play Against AI</a>
+            <a href="rule.html" class="nav-item">HOW TO PLAY</a>
+            <a href="#" class="nav-item">SETTINGS</a>
+          </nav>
+        </div>
+
+        <div class="right-col">
+          <div class="info-block">
+            <h3>
+              <div class="icon-igo">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              THE IGO
+            </h3>
+            <p>
+              Form an unbroken line of 4 Yugos of your color for an instant
+              victory.
+            </p>
+          </div>
+
+          <div class="info-block">
+            <h3>
+              <div class="icon-wego"></div>
+              THE WEGO
+            </h3>
+            <p>
+              When no moves remain, the player with the highest Yugo count is
+              declared the winner.
+            </p>
+          </div>
+
+          <div class="mini-grid" id="demoGrid"></div>
+        </div>
+      </main>
+
+      <footer>
+        <div class="dev-info">
+          DEVELOPED FOR
+          <strong>STRATEGIC MINDS</strong>
+        </div>
+        <div class="server-info">
+          <div>
+            LATENCY: <span class="latency">14MS</span><br />
+            SERVER: GLOBAL_NORTH
+          </div>
+          <div class="radar-circle"></div>
+        </div>
+      </footer>
+    </div>
+
     <script>
-      const btnRules = document.getElementById("btnRules");
-      const btnCloseRules = document.getElementById("btnCloseRules");
-      const rulesModal = document.getElementById("rulesModal");
-      const playButton = document.querySelector('a[href="migoyugo.html"]');
-      const playAIButton = document.querySelector('a[href="ai_game.html"]');
+      // --- AUDIO CONTROLLER ---
       const loadingScreen = document.getElementById("loadingScreen");
+      const smokeVideo = document.querySelector(".bg-video");
+      const bgMusic = document.getElementById("bg-music");
+      const musicToggleBtn = document.getElementById("music-toggle");
+      const musicIcon = document.getElementById("music-icon");
+      let isMusicPlaying = false;
 
-      function openModal() {
-        rulesModal.classList.add("active");
-        document.body.style.overflow = "hidden";
+      function hideLoadingScreen() {
+        loadingScreen.classList.add("hidden");
       }
 
-      function closeModal() {
-        rulesModal.classList.remove("active");
-        document.body.style.overflow = "";
-      }
-
-      btnRules.addEventListener("click", openModal);
-      btnCloseRules.addEventListener("click", closeModal);
-
-      rulesModal.addEventListener("click", (e) => {
-        if (e.target === rulesModal) {
-          closeModal();
+      function revealVideoWhenReady() {
+        if (smokeVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          hideLoadingScreen();
+          return;
         }
+
+        const onReady = () => {
+          smokeVideo.removeEventListener("loadeddata", onReady);
+          smokeVideo.removeEventListener("canplay", onReady);
+          hideLoadingScreen();
+        };
+
+        smokeVideo.addEventListener("loadeddata", onReady, { once: true });
+        smokeVideo.addEventListener("canplay", onReady, { once: true });
+      }
+
+      function updateMusicButton() {
+        musicToggleBtn.classList.toggle("active", isMusicPlaying);
+        musicToggleBtn.classList.toggle("muted", !isMusicPlaying);
+        musicToggleBtn.setAttribute("aria-pressed", String(isMusicPlaying));
+        musicToggleBtn.setAttribute(
+          "aria-label",
+          isMusicPlaying ? "Disable sound" : "Enable sound",
+        );
+        musicToggleBtn.title = isMusicPlaying
+          ? "Disable sound"
+          : "Enable sound";
+        musicIcon.textContent = "🔊";
+      }
+
+      updateMusicButton();
+      revealVideoWhenReady();
+
+      musicToggleBtn.addEventListener("click", () => {
+        if (isMusicPlaying) {
+          bgMusic.pause();
+        } else {
+          bgMusic.volume = 0.5;
+          bgMusic
+            .play()
+            .catch((error) => console.log("Playback failed:", error));
+        }
+        isMusicPlaying = !isMusicPlaying;
+        updateMusicButton();
       });
 
-      // Fade out animation before navigation
-      function addNavigation(button, href) {
-        button.addEventListener("click", (e) => {
-          e.preventDefault();
-          loadingScreen.classList.add("active");
-          document.body.classList.add("fade-out");
-          setTimeout(() => {
-            window.location.href = href;
-          }, 600);
-        });
+      // --- 8x8 ANIMATED GRID ---
+      const grid = document.getElementById("demoGrid");
+      for (let i = 0; i < 64; i++) {
+        const cell = document.createElement("div");
+        cell.className = "m-cell";
+        grid.appendChild(cell);
       }
 
-      addNavigation(playButton, "migoyugo.html");
-      addNavigation(playAIButton, "ai_game.html");
+      const cells = document.querySelectorAll(".m-cell");
+
+      setInterval(() => {
+        cells.forEach((c) => (c.className = "m-cell"));
+
+        for (let i = 0; i < 4; i++) {
+          let r1 = Math.floor(Math.random() * 64);
+          cells[r1].classList.add("active-cyan");
+        }
+        for (let i = 0; i < 4; i++) {
+          let r2 = Math.floor(Math.random() * 64);
+          if (!cells[r2].classList.contains("active-cyan")) {
+            cells[r2].classList.add("active-white");
+          }
+        }
+      }, 1500);
     </script>
   </body>
 </html>
