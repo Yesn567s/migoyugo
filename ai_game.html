@@ -6,236 +6,288 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Migoyugo - vs AI</title>
+    <title>Migoyugo - AI Engagement</title>
     <link rel="stylesheet" href="ai_game.css" />
   </head>
   <body>
-    <!-- Color Selection Modal -->
-    <div class="modal-backdrop" id="colorSelectionModal">
+    <!-- Initial Tactical Setup -->
+    <div id="colorSelectionModal" class="modal show">
       <div class="modal-box">
-        <h2>Choose Your Color</h2>
-        <p>Select which color to play as</p>
+        <h2
+          style="
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            margin: 0 0 5px;
+            font-weight: 900;
+          "
+        >
+          AI ENGAGEMENT
+        </h2>
+        <p style="color: var(--dim); font-size: 0.8rem; margin-bottom: 25px">
+          Initialize tactical field and AI parameters.
+        </p>
 
-        <div class="color-selection">
-          <button
-            class="color-button white selected"
-            data-color="1"
-            id="colorWhite"
-          ></button>
-          <button
-            class="color-button black"
-            data-color="2"
-            id="colorBlack"
-          ></button>
+        <div class="ident-wrap">
+          <label
+            class="ident-label"
+            style="
+              font-size: 0.6rem;
+              color: var(--dim);
+              font-weight: 800;
+              display: block;
+              margin-bottom: 10px;
+              text-align: center;
+            "
+            >CHOOSE YOUR UNIT (White moves first)</label
+          >
+          <div class="color-selection">
+            <div
+              class="color-button white selected"
+              data-color="1"
+              id="colorWhite"
+            ></div>
+            <div
+              class="color-button black"
+              data-color="2"
+              id="colorBlack"
+            ></div>
+          </div>
         </div>
 
-        <div class="input-group">
-          <label for="playerName">Your Name</label>
+        <div class="ident-wrap">
+          <label
+            class="ident-label"
+            style="
+              font-size: 0.6rem;
+              color: var(--dim);
+              font-weight: 800;
+              display: block;
+              margin-bottom: 5px;
+            "
+            >COMMANDER IDENT</label
+          >
           <input
             type="text"
             id="playerName"
-            placeholder="Enter your name"
-            value="Player"
+            class="ident-input"
+            value="Commander"
           />
         </div>
 
-        <div class="input-group">
-          <label for="aiMaxDepth">AI Max Depth</label>
+        <div class="ident-wrap">
+          <label
+            class="ident-label"
+            style="
+              font-size: 0.6rem;
+              color: var(--dim);
+              font-weight: 800;
+              display: block;
+              margin-bottom: 5px;
+            "
+            >AI PROCESSING DEPTH (1-6)</label
+          >
           <input
             type="number"
             id="aiMaxDepth"
+            class="ident-input"
             min="1"
-            max="8"
-            step="1"
+            max="6"
             value="2"
           />
         </div>
 
         <button
-          class="action"
-          style="width: 100%; padding: 14px; font-size: 1.1rem"
-          id="startGameBtn"
-        >
-          Start Game
-        </button>
-      </div>
-    </div>
-
-    <!-- Game Over Modal -->
-    <div class="modal-backdrop hidden" id="gameOverModal">
-      <div class="modal-box" style="position: relative">
-        <button
-          id="closeGameOverBtn"
-          style="
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 28px;
-            color: #888;
-            cursor: pointer;
-            padding: 5px;
-            line-height: 1;
-            transition: color 0.2s;
-          "
-          onmouseover="this.style.color = '#fff'"
-          onmouseout="this.style.color = '#888'"
-        >
-          &times;
-        </button>
-        <h2
-          id="goTitle"
-          class="winner-text"
-          style="font-size: 2.2rem; margin-bottom: 4px"
-        >
-          You Won!
-        </h2>
-        <p id="goSubtitle" style="font-size: 1.1rem; color: #fff">
-          Congratulations!
-        </p>
-
-        <div class="stats" style="margin-bottom: 24px; margin-top: 10px">
-          <div class="stat">
-            <span class="label" id="goP1Label">Your Score</span>
-            <span class="value" id="goP1Score">0</span>
-          </div>
-          <div class="stat">
-            <span class="label" id="goP2Label">AI Score</span>
-            <span class="value" id="goP2Score">0</span>
-          </div>
-        </div>
-
-        <button
-          class="action"
-          id="playAgainBtn"
-          style="width: 100%; padding: 14px; font-size: 1.1rem"
-        >
-          Play Again
-        </button>
-        <a
-          href="index.html"
-          class="action secondary"
+          class="btn"
           style="
             width: 100%;
-            padding: 14px;
-            font-size: 1rem;
-            margin-top: 10px;
-            text-decoration: none;
-            display: block;
+            padding: 18px;
+            font-size: 0.8rem;
+            border-color: var(--accent);
+          "
+          id="startGameBtn"
+        >
+          BEGIN ENGAGEMENT
+        </button>
+      </div>
+    </div>
+
+    <!-- Settlement Popup -->
+    <div id="gameOverModal" class="modal">
+      <div class="modal-box">
+        <div
+          style="
+            font-size: 0.6rem;
+            color: var(--accent);
+            letter-spacing: 5px;
+            margin-bottom: 5px;
           "
         >
-          Back to Menu
-        </a>
+          CONFLICT SETTLED
+        </div>
+        <h2
+          id="goTitle"
+          style="font-size: 1.8rem; margin: 15px 0 10px; font-weight: 900"
+        >
+          VICTORY
+        </h2>
+        <p
+          id="goSubtitle"
+          style="color: var(--dim); font-size: 0.85rem; margin-bottom: 25px"
+        >
+          Tactical objective achieved.
+        </p>
+
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+          "
+        >
+          <div>
+            <span style="font-size: 0.6rem; color: var(--dim)" id="goP1Label"
+              >PLAYER</span
+            >
+            <div
+              id="goP1Score"
+              style="font-size: 1.5rem; color: var(--accent); font-weight: 900"
+            >
+              0
+            </div>
+          </div>
+          <div>
+            <span style="font-size: 0.6rem; color: var(--dim)" id="goP2Label"
+              >AI</span
+            >
+            <div
+              id="goP2Score"
+              style="font-size: 1.5rem; color: var(--accent); font-weight: 900"
+            >
+              0
+            </div>
+          </div>
+        </div>
+
+        <button
+          class="btn"
+          style="width: 100%; margin-bottom: 8px"
+          id="playAgainBtn"
+        >
+          RE-INITIATE
+        </button>
+        <button
+          class="btn"
+          style="width: 100%"
+          onclick="location.href = 'index.html'"
+        >
+          EXIT COMMAND
+        </button>
       </div>
     </div>
 
-    <!-- Move History Log Modal -->
-    <div class="modal-backdrop hidden" id="logModal">
-      <div class="modal-box" id="logModalBox">
-        <div class="modal-header-row">
-          <h2>Move History</h2>
-          <button class="close-btn" id="closeLogBtn">&times;</button>
-        </div>
-        <div class="history-list" id="historyList"></div>
-      </div>
-    </div>
+    <div class="app-shell">
+      <header class="hdr">
+        <h1>MIGOYUGO COMMAND <span class="mv-tag">VS AI</span></h1>
+        <div class="target-bar" id="tHdr">Target: <b>--</b></div>
+      </header>
 
-    <!-- Main Game Area -->
-    <div class="shell">
-      <div class="hero">
-        <div class="title-block">
-          <h1>Migoyugo</h1>
-          <p>vs AI - Strategic Board Game</p>
+      <main class="board-frame">
+        <div id="board" class="board"></div>
+      </main>
+
+      <aside class="side-cards">
+        <div class="stats-wrap">
+          <div id="cd1" class="card active">
+            <div class="score-box">
+              <span class="label" id="labelWhitePoints">WHITE</span>
+              <div class="val" id="scoreWhite">0</div>
+            </div>
+            <div class="status-indicator" id="turnIndicator1">ACTIVE</div>
+          </div>
+
+          <div id="cd2" class="card">
+            <div class="score-box">
+              <span class="label" id="labelBlackPoints">BLACK</span>
+              <div class="val" id="scoreBlack">0</div>
+            </div>
+            <div class="status-indicator" id="turnIndicator2">WAITING</div>
+          </div>
         </div>
-        <div class="chip-row">
-          <a
-            href="index.html"
-            class="chip menu-link"
+
+        <div class="registry">
+          <div
+            id="log"
             style="
-              text-decoration: none;
-              display: flex;
-              align-items: center;
-              gap: 6px;
+              font-family: monospace;
+              font-size: 0.75rem;
+              color: var(--accent);
             "
           >
-            <span>&larr;</span> Main Menu
-          </a>
-          <div class="chip">Gamemode: vs AI</div>
+            Initialize systems...
+          </div>
         </div>
-      </div>
 
-      <div class="grid-layout">
-        <section class="panel side">
-          <div class="status-card">
-            <div class="status-label">Current Turn</div>
-            <div class="turn-banner">
-              <span class="turn-name" id="turnName">Player</span>
-              <div class="turn-dot" id="turnDot"></div>
-            </div>
-          </div>
-
-          <div class="status-card">
-            <div class="status-label">Yugos</div>
-            <div class="stats">
-              <div class="stat">
-                <span class="label" id="labelWhitePoints">White</span>
-                <span class="value" id="scoreWhite">0</span>
-              </div>
-              <div class="stat">
-                <span class="label" id="labelBlackPoints">Black</span>
-                <span class="value" id="scoreBlack">0</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="log" id="log">Game started. White moves first.</div>
-
-          <div class="footer-row">
-            <div class="actions">
-              <button class="action" id="restartBtn">Restart</button>
-              <button class="action secondary" id="viewLogBtn">Move Log</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel board-wrap">
-          <div class="board-shell">
-            <div class="board" id="board"></div>
-            <div class="board-file-labels" id="boardFileLabels"></div>
-            <div class="board-rank-labels" id="boardRankLabels"></div>
-          </div>
-        </section>
-      </div>
+        <div class="actions">
+          <button class="btn" id="undoBtn">Undo</button>
+          <button class="btn" id="viewLogBtn">History</button>
+          <button class="btn" style="color: var(--danger)" id="resignBtn">
+            Resign
+          </button>
+        </div>
+        <button
+          class="btn"
+          style="margin-top: 10px"
+          onclick="location.href = 'index.html'"
+        >
+          ⌂ BACK TO MENU
+        </button>
+      </aside>
     </div>
 
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
-      <div class="spinner"></div>
-      <div class="loading-text">Loading...</div>
+    <div id="logModal" class="modal" onclick="this.classList.remove('show')">
+      <div class="modal-box" onclick="event.stopPropagation()">
+        <h2 style="font-size: 1rem; margin-bottom: 15px">ACTION MATRIX</h2>
+        <div
+          id="historyList"
+          class="history-list"
+          style="
+            background: #060912;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+          "
+        ></div>
+        <button
+          class="btn"
+          style="width: 100%; margin-top: 15px"
+          id="closeLogBtn"
+        >
+          CLOSE
+        </button>
+      </div>
     </div>
 
     <script>
+      // --- CONSTANTS ---
       const size = 8;
-      const MAX_DEPTH = 4; // Depth for minimax algorithm
-      const THINK_TIME = 500; // Minimum time for AI to "think" in ms
-
-      // Initialize AI Worker
+      const THINK_TIME = 600;
       const aiWorker = new Worker("ai_worker.js");
 
+      // --- DOM ELEMENTS ---
       const boardElement = document.getElementById("board");
-      const boardFileLabelsElement = document.getElementById("boardFileLabels");
-      const boardRankLabelsElement = document.getElementById("boardRankLabels");
-      const turnNameElement = document.getElementById("turnName");
-      const turnDotElement = document.getElementById("turnDot");
       const scoreWhiteElement = document.getElementById("scoreWhite");
       const scoreBlackElement = document.getElementById("scoreBlack");
       const labelWhitePoints = document.getElementById("labelWhitePoints");
       const labelBlackPoints = document.getElementById("labelBlackPoints");
       const logElement = document.getElementById("log");
-      const restartBtn = document.getElementById("restartBtn");
-
-      // Modal Elements
+      const undoBtn = document.getElementById("undoBtn");
+      const resignBtn = document.getElementById("resignBtn");
       const colorSelectionModal = document.getElementById(
         "colorSelectionModal",
       );
@@ -243,51 +295,39 @@
       const playerNameInput = document.getElementById("playerName");
       const aiMaxDepthInput = document.getElementById("aiMaxDepth");
       const startGameBtn = document.getElementById("startGameBtn");
-      const colorWhiteBtn = document.getElementById("colorWhite");
-      const colorBlackBtn = document.getElementById("colorBlack");
-
       const gameOverModal = document.getElementById("gameOverModal");
       const goTitle = document.getElementById("goTitle");
       const goSubtitle = document.getElementById("goSubtitle");
-      const goP1Label = document.getElementById("goP1Label");
-      const goP2Label = document.getElementById("goP2Label");
       const goP1Score = document.getElementById("goP1Score");
       const goP2Score = document.getElementById("goP2Score");
-      const playAgainBtn = document.getElementById("playAgainBtn");
-      const closeGameOverBtn = document.getElementById("closeGameOverBtn");
-
       const logModal = document.getElementById("logModal");
       const viewLogBtn = document.getElementById("viewLogBtn");
-      const closeLogBtn = document.getElementById("closeLogBtn");
       const historyList = document.getElementById("historyList");
 
-      let playerColor = 1; // 1 = white, 2 = black
-      let aiMaxDepth = 4;
+      // --- GAME STATE ---
+      let playerColor = 1;
+      let aiMaxDepth = 2;
       const players = {
-        1: { name: "Player", color: "white", label: "white" },
-        2: { name: "AI", color: "black", label: "black" },
+        1: { name: "White", color: "white" },
+        2: { name: "Black", color: "black" },
       };
-
-      // Sound Effects
-      function playSound(filename) {
-        const audio = new Audio(`assets/sfx/${filename}`);
-        audio.volume = 0.3;
-        audio.play().catch((e) => console.log("Sound play error:", e));
-      }
 
       const state = {
-        board: createEmptyBoard(),
+        board: Array.from({ length: size }, () => Array(size).fill(null)),
         turn: 1,
         gameOver: false,
-        winner: null,
         gameStarted: false,
-        moveHistory: [],
         gameMoves: [],
-        moveCount: 0,
         aiThinking: false,
+        undoStack: [], // Stores history for undoing moves
       };
 
-      // ==================== COLOR SELECTION ====================
+      function playAudio(name) {
+        const audio = new Audio(`./assets/sfx/${name}.mp3`);
+        audio.play().catch((e) => console.log("Audio pending..."));
+      }
+
+      // --- INITIALIZATION ---
       colorButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
           colorButtons.forEach((b) => b.classList.remove("selected"));
@@ -297,502 +337,110 @@
       });
 
       startGameBtn.addEventListener("click", () => {
-        const name = playerNameInput.value.trim() || "Player";
-        const depthValue = Number.parseInt(aiMaxDepthInput.value, 10);
-        aiMaxDepth = Number.isFinite(depthValue)
-          ? Math.min(6, Math.max(1, depthValue))
-          : 4;
+        const name = playerNameInput.value.trim() || "Commander";
+        aiMaxDepth = parseInt(aiMaxDepthInput.value) || 2;
         players[playerColor].name = name;
-        const aiColor = playerColor === 1 ? 2 : 1;
-        players[aiColor].name = "AI";
-
-        labelWhitePoints.textContent = `${players[1].name}`;
-        labelBlackPoints.textContent = `${players[2].name}`;
-
-        colorSelectionModal.classList.add("hidden");
+        players[playerColor === 1 ? 2 : 1].name = "AI UNIT";
+        labelWhitePoints.textContent = players[1].name.toUpperCase();
+        labelBlackPoints.textContent = players[2].name.toUpperCase();
+        colorSelectionModal.classList.remove("show");
         state.gameStarted = true;
-
         resetGame();
-
-        // If AI is white (moves first), trigger AI move
-        if (state.turn !== playerColor) {
-          setTimeout(makeAIMove, 800);
+        if (playerColor === 2) {
+          pushLog("AI INITIATING FIRST STRIKE...");
+          setTimeout(makeAIMove, 1000);
         }
       });
-
-      playerNameInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") startGameBtn.click();
-      });
-
-      playAgainBtn.addEventListener("click", () => {
-        gameOverModal.classList.add("hidden");
-        resetGame();
-      });
-
-      closeGameOverBtn.addEventListener("click", () => {
-        gameOverModal.classList.add("hidden");
-      });
-
-      viewLogBtn.addEventListener("click", () => {
-        renderHistoryList();
-        logModal.classList.remove("hidden");
-      });
-
-      closeLogBtn.addEventListener("click", () =>
-        logModal.classList.add("hidden"),
-      );
-
-      logModal.addEventListener("click", (e) => {
-        if (e.target === logModal) logModal.classList.add("hidden");
-      });
-
-      // ==================== GAME LOGIC ====================
-      function createEmptyBoard() {
-        return Array.from({ length: size }, () => Array(size).fill(null));
-      }
-
-      function buildBoardEdgeLabels() {
-        boardFileLabelsElement.innerHTML = "";
-        boardRankLabelsElement.innerHTML = "";
-        for (let col = 0; col < size; col += 1) {
-          const label = document.createElement("div");
-          label.className = "coord-label";
-          label.textContent = String.fromCharCode(65 + col);
-          boardFileLabelsElement.appendChild(label);
-        }
-        for (let row = 0; row < size; row += 1) {
-          const label = document.createElement("div");
-          label.className = "coord-label";
-          label.textContent = String(size - row);
-          boardRankLabelsElement.appendChild(label);
-        }
-      }
 
       function buildBoard() {
         boardElement.innerHTML = "";
-        buildBoardEdgeLabels();
-        for (let row = 0; row < size; row += 1) {
-          for (let col = 0; col < size; col += 1) {
+        for (let row = 0; row < size; row++) {
+          for (let col = 0; col < size; col++) {
             const cell = document.createElement("div");
-            cell.className = "cell";
+            cell.className = `cell ${(row + col) % 2 === 0 ? "tile-a" : "tile-b"}`;
             cell.dataset.row = row;
             cell.dataset.col = col;
-            cell.addEventListener("click", onCellClick);
+            cell.onclick = () => onCellClick(row, col);
+            cell.onmouseenter = () => scout(row, col);
             boardElement.appendChild(cell);
           }
         }
       }
 
-      function onCellClick(event) {
-        if (!state.gameStarted || state.gameOver || state.aiThinking) return;
-        if (state.turn !== playerColor) return;
+      function scout(r, c) {
+        const coords = `${String.fromCharCode(65 + c)}${size - r}`;
+        document.getElementById("tHdr").innerHTML = `Target: <b>${coords}</b>`;
+      }
 
-        const cell = event.currentTarget;
-        const row = Number(cell.dataset.row);
-        const col = Number(cell.dataset.col);
-
-        if (state.board[row][col]) {
-          pushLog("That square is occupied!");
-          cell.classList.add("error");
-          setTimeout(() => cell.classList.remove("error"), 300);
+      function onCellClick(row, col) {
+        if (
+          !state.gameStarted ||
+          state.gameOver ||
+          state.aiThinking ||
+          state.turn !== playerColor
+        )
           return;
-        }
-
-        if (wouldCreateLongLine(row, col, state.turn)) {
-          pushLog("Cannot create a line longer than 4!");
-          cell.classList.add("error");
-          setTimeout(() => cell.classList.remove("error"), 300);
+        if (state.board[row][col] || wouldCreateLongLine(row, col, state.turn))
           return;
-        }
 
+        // Save current state before player moves
+        saveUndoState();
         placeTile(row, col);
+      }
 
-        // Trigger AI move after a brief delay
-        if (!state.gameOver && state.turn !== playerColor) {
-          setTimeout(makeAIMove, 800);
-        }
+      function saveUndoState() {
+        state.undoStack.push(
+          JSON.stringify({
+            board: state.board,
+            turn: state.turn,
+            gameMoves: state.gameMoves,
+          }),
+        );
       }
 
       function placeTile(row, col) {
-        const player = state.turn;
-        state.board[row][col] = { player, yugo: false };
+        const p = state.turn;
+        state.board[row][col] = { player: p, yugo: false };
+        playAudio(p === 1 ? "white" : "black");
 
         let notation = `${String.fromCharCode(97 + col)}${size - row}`;
+        const lines = findAllStraightLines(row, col, p);
 
-        pushLog(`${players[player].name} placed at ${cellName(row, col)}`);
-
-        playSound(`${players[player].color}.mp3`);
-
-        const lines = findAllStraightLines(row, col, player);
         if (lines.length > 0) {
-          formYugo(lines, player, { row, col });
-          notation += "*".repeat(lines.length);
-          pushLog(
-            `${players[player].name} formed a Yugo at ${cellName(row, col)}!`,
-            true,
-          );
+          playAudio("form");
+          lines.flat().forEach(([r, c]) => {
+            const cell = document.querySelector(
+              `.cell[data-row="${r}"][data-col="${c}"]`,
+            );
+            if (cell) {
+              cell.classList.add("forming");
+              setTimeout(() => cell.classList.remove("forming"), 600);
+            }
+          });
+          formYugo(lines, p, { row, col });
+          notation += "*";
         }
 
         state.gameMoves.push(notation);
 
-        if (checkIgo(player)) {
-          state.gameOver = true;
-          state.winner = player;
-          showGameOver(player, `${players[player].name} achieved an Igo!`);
-          return;
-        }
-
-        state.turn = state.turn === 1 ? 2 : 1;
-
-        const boardFull = isBoardFull();
-        const noMoves = !hasLegalMoves(state.turn);
-
-        if (boardFull || noMoves) {
-          const result = evaluateWego(
-            boardFull
-              ? "Board filled - Wego"
-              : `${players[state.turn].name} has no legal moves - Wego`,
-          );
-          state.gameOver = true;
-          state.winner = result.winner;
-          showGameOver(result.winner, result.message);
-          return;
-        }
-
-        render();
-      }
-
-      function inBounds(row, col) {
-        return row >= 0 && row < size && col >= 0 && col < size;
-      }
-
-      function isPlayerCell(row, col, player) {
-        const tile = state.board[row][col];
-        return tile && tile.player === player;
-      }
-
-      function cellName(row, col) {
-        return `${String.fromCharCode(65 + col)}${size - row}`;
-      }
-
-      function wouldCreateLongLine(row, col, player) {
-        const directions = [
-          [0, 1],
-          [1, 0],
-          [1, 1],
-          [1, -1],
-        ];
-
-        for (const [dr, dc] of directions) {
-          let count = 1;
-          for (let i = 1; i < 8; i++) {
-            const nr = row + i * dr;
-            const nc = col + i * dc;
-            if (!inBounds(nr, nc) || !isPlayerCell(nr, nc, player)) break;
-            count++;
-          }
-          for (let i = 1; i < 8; i++) {
-            const nr = row - i * dr;
-            const nc = col - i * dc;
-            if (!inBounds(nr, nc) || !isPlayerCell(nr, nc, player)) break;
-            count++;
-          }
-          if (count > 4) return true;
-        }
-        return false;
-      }
-
-      function hasLegalMoves(player) {
-        for (let r = 0; r < size; r++) {
-          for (let c = 0; c < size; c++) {
-            if (!state.board[r][c] && !wouldCreateLongLine(r, c, player)) {
-              return true;
-            }
-          }
-        }
-        return false;
-      }
-
-      function findAllStraightLines(row, col, player) {
-        const directions = [
-          [0, 1],
-          [1, 0],
-          [1, 1],
-          [1, -1],
-        ];
-        const validLines = [];
-
-        for (const [dr, dc] of directions) {
-          const line = [[row, col]];
-          for (let i = 1; i < 4; i++) {
-            const nr = row + i * dr;
-            const nc = col + i * dc;
-            if (!inBounds(nr, nc) || !isPlayerCell(nr, nc, player)) break;
-            line.push([nr, nc]);
-          }
-          for (let i = 1; i < 4; i++) {
-            const nr = row - i * dr;
-            const nc = col - i * dc;
-            if (!inBounds(nr, nc) || !isPlayerCell(nr, nc, player)) break;
-            line.unshift([nr, nc]);
-          }
-
-          if (line.length === 4) {
-            validLines.push(line);
-          }
-        }
-        return validLines;
-      }
-
-      function formYugo(lines, player, anchor) {
-        const tilesToRemove = new Set();
-        const existingYugos = []; // track Yugos already on the board within this line
-
-        for (const line of lines) {
-          for (const [r, c] of line) {
-            tilesToRemove.add(`${r}:${c}`);
-            const tile = state.board[r][c];
-            if (tile && tile.yugo) {
-              existingYugos.push({ r, c }); // remember their positions
-            }
-          }
-        }
-
-        // Clear all tiles in the line
-        for (const key of tilesToRemove) {
-          const [r, c] = key.split(":").map(Number);
-          state.board[r][c] = null;
-        }
-
-        // Restore previously existing Yugos
-        for (const { r, c } of existingYugos) {
-          state.board[r][c] = { player, yugo: true };
-        }
-
-        // Place the new Yugo at the anchor
-        state.board[anchor.row][anchor.col] = { player, yugo: true };
-      }
-
-      function checkIgo(player) {
-        const yugos = [];
-        for (let row = 0; row < size; row += 1) {
-          for (let col = 0; col < size; col += 1) {
-            const tile = state.board[row][col];
-            if (tile && tile.player === player && tile.yugo) {
-              yugos.push([row, col]);
-            }
-          }
-        }
-        const yugoSet = new Set(yugos.map(([row, col]) => `${row}:${col}`));
-
-        for (const [row, col] of yugos) {
-          const directions = [
-            [0, 1],
-            [1, 0],
-            [1, 1],
-            [1, -1],
-          ];
-          for (const [dr, dc] of directions) {
-            let count = 1;
-            for (let i = 1; i < 4; i++) {
-              const nr = row + i * dr;
-              const nc = col + i * dc;
-              if (!inBounds(nr, nc) || !yugoSet.has(`${nr}:${nc}`)) break;
-              count++;
-            }
-            for (let i = 1; i < 4; i++) {
-              const nr = row - i * dr;
-              const nc = col - i * dc;
-              if (!inBounds(nr, nc) || !yugoSet.has(`${nr}:${nc}`)) break;
-              count++;
-            }
-            if (count === 4) return true;
-          }
-        }
-        return false;
-      }
-
-      function isBoardFull() {
-        for (let row = 0; row < size; row += 1) {
-          for (let col = 0; col < size; col += 1) {
-            if (!state.board[row][col]) return false;
-          }
-        }
-        return true;
-      }
-
-      function evaluateWego(reasonMessage) {
-        const white = countPlayerPoints(1);
-        const black = countPlayerPoints(2);
-
-        if (white === black) {
-          return { winner: null, message: "Draw! " + reasonMessage };
-        }
-        const winner = white > black ? 1 : 2;
-        return {
-          winner,
-          message: `${players[winner].name} wins with Wego! ` + reasonMessage,
-        };
-      }
-
-      function countPlayerPoints(player) {
-        let count = 0;
-        for (let row = 0; row < size; row += 1) {
-          for (let col = 0; col < size; col += 1) {
-            const tile = state.board[row][col];
-            if (tile && tile.player === player && tile.yugo) count++;
-          }
-        }
-        return count;
-      }
-
-      function pushLog(message, isImportant = false) {
-        logElement.textContent = message;
-
-        if (
-          message.includes("Invalid") ||
-          message.includes("occupied") ||
-          message.includes("Cannot")
-        ) {
-          logElement.style.color = "var(--danger)";
+        if (checkIgo(p)) {
+          endGame(p, "TACTICAL IGO ACHIEVED");
         } else {
-          logElement.style.color = "#dce6ff";
-        }
-        // We removed the array pushing from here completely!
-      }
-
-      function renderHistoryList() {
-        historyList.innerHTML = "";
-        if (state.gameMoves.length === 0) {
-          historyList.innerHTML =
-            '<div style="color: var(--muted);">No moves yet</div>';
-          return;
-        }
-
-        // Loop through moves in pairs of 2 (White, then Black)
-        for (let i = 0; i < state.gameMoves.length; i += 2) {
-          const turnNum = Math.floor(i / 2) + 1;
-          const whiteMove = state.gameMoves[i];
-          const blackMove = state.gameMoves[i + 1] || ""; // Might be empty if game ends on White's turn
-
-          const turnBlock = document.createElement("div");
-          turnBlock.style.marginBottom = "10px";
-          turnBlock.style.fontFamily = "monospace";
-          turnBlock.style.fontSize = "1.2rem";
-          turnBlock.style.lineHeight = "1.4";
-
-          // Format it exactly like the professional logs
-          turnBlock.innerHTML = `
-            <div style="color: #888;">${turnNum}.</div>
-            <div style="color: #fff;">${whiteMove}</div>
-            ${blackMove ? `<div style="color: #fff;">${blackMove}</div>` : ""}
-          `;
-          historyList.appendChild(turnBlock);
-        }
-
-        historyList.scrollTop = historyList.scrollHeight;
-      }
-
-      function showGameOver(winnerId, subtitleMsg) {
-        if (winnerId === null) {
-          goTitle.textContent = "Draw!";
-          goTitle.style.webkitTextFillColor = "var(--text)";
-        } else {
-          goTitle.textContent = `${players[winnerId].name} Wins!`;
-          goTitle.style.webkitTextFillColor = "transparent";
-        }
-
-        goSubtitle.textContent = subtitleMsg;
-        goP1Label.textContent = `${players[1].name} Yugos`;
-        goP2Label.textContent = `${players[2].name} Yugos`;
-        goP1Score.textContent = countPlayerPoints(1);
-        goP2Score.textContent = countPlayerPoints(2);
-
-        gameOverModal.classList.remove("hidden");
-      }
-
-      function render() {
-        turnNameElement.textContent = players[state.turn].name;
-        turnDotElement.className = `turn-dot ${players[state.turn].color}`;
-        scoreWhiteElement.textContent = countPlayerPoints(1);
-        scoreBlackElement.textContent = countPlayerPoints(2);
-
-        boardElement.innerHTML = "";
-        for (let row = 0; row < size; row += 1) {
-          for (let col = 0; col < size; col += 1) {
-            const cell = document.createElement("div");
-            cell.className = "cell";
-            cell.dataset.row = row;
-            cell.dataset.col = col;
-
-            if (state.turn === state.turn && state.gameStarted) {
-              cell.addEventListener("click", onCellClick);
-            }
-
-            const tile = state.board[row][col];
-            if (tile) {
-              const piece = document.createElement("div");
-              piece.className = `piece ${tile.player === 1 ? "white" : "black"} ${tile.yugo ? "yugo" : "circle"}`;
-
-              if (tile.yugo) {
-                const dot = document.createElement("div");
-                dot.className = "inner-dot";
-                piece.appendChild(dot);
-              }
-
-              piece.classList.add("place-animation");
-              cell.appendChild(piece);
-            }
-
-            cell.addEventListener("click", onCellClick);
-            boardElement.appendChild(cell);
+          state.turn = state.turn === 1 ? 2 : 1;
+          render();
+          if (isBoardFull()) endGame(null, "FIELD SATURATED");
+          if (!state.gameOver && state.turn !== playerColor) {
+            // Save state again before AI moves
+            saveUndoState();
+            setTimeout(makeAIMove, 800);
           }
         }
       }
-
-      function resetGame() {
-        state.board = createEmptyBoard();
-        state.turn = 1;
-        state.gameOver = false;
-        state.winner = null;
-        state.moveHistory = [];
-        state.gameMoves = [];
-        state.moveCount = 0;
-        state.aiThinking = false;
-        pushLog("Game restarted. White moves first.");
-        buildBoard();
-        render();
-      }
-
-      // ==================== AI LOGIC - MINIMAX ====================
-
-      let startTime;
 
       function makeAIMove() {
-        if (state.aiThinking || state.gameOver) return;
+        if (state.gameOver) return;
         state.aiThinking = true;
-        pushLog("AI is thinking...");
         logElement.classList.add("ai-thinking");
-
-        startTime = Date.now();
-
-        // Check for legal moves first (quick check)
-        const hasLegalMovesForAI = hasLegalMoves(state.turn);
-
-        if (!hasLegalMovesForAI) {
-          // No legal moves - trigger Wego
-          const result = evaluateWego(
-            `${players[state.turn].name} has no legal moves - Wego`,
-          );
-          state.gameOver = true;
-          state.winner = result.winner;
-          state.aiThinking = false;
-          logElement.classList.remove("ai-thinking");
-          showGameOver(result.winner, result.message);
-          return;
-        }
-
-        // Send board to worker for minimax computation
         aiWorker.postMessage({
           board: state.board,
           playerColor: playerColor,
@@ -801,43 +449,192 @@
         });
       }
 
-      // Handle AI Worker response
-      aiWorker.onmessage = function (e) {
-        const { bestMove, error } = e.data;
-
-        if (error === "noMoves") {
-          // This shouldn't happen since we checked above, but handle it
-          const result = evaluateWego(
-            `${players[state.turn].name} has no legal moves - Wego`,
-          );
-          state.gameOver = true;
-          state.winner = result.winner;
-          state.aiThinking = false;
-          logElement.classList.remove("ai-thinking");
-          showGameOver(result.winner, result.message);
-          return;
-        }
-
-        // Ensure minimum think time for better UX
-        const elapsedTime = Date.now() - startTime;
-        const delayNeeded = Math.max(0, THINK_TIME - elapsedTime);
-
+      aiWorker.onmessage = (e) => {
+        const { bestMove } = e.data;
         setTimeout(() => {
-          placeTile(bestMove.row, bestMove.col);
           state.aiThinking = false;
           logElement.classList.remove("ai-thinking");
-
-          if (!state.gameOver && state.turn === playerColor) {
-            pushLog(`${players[playerColor].name}, it's your turn!`);
-          }
-        }, delayNeeded);
+          if (bestMove) placeTile(bestMove.row, bestMove.col);
+        }, THINK_TIME);
       };
 
-      restartBtn.addEventListener("click", resetGame);
+      function render() {
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          const r = cell.dataset.row;
+          const c = cell.dataset.col;
+          const tile = state.board[r][c];
+          cell.innerHTML = "";
+          if (tile) {
+            const piece = document.createElement("div");
+            piece.className = `piece ${tile.player === 1 ? "white" : "black"} ${tile.yugo ? "yugo" : ""}`;
+            cell.appendChild(piece);
+          }
+        });
+        document
+          .getElementById("cd1")
+          .classList.toggle("active", state.turn === 1);
+        document
+          .getElementById("cd2")
+          .classList.toggle("active", state.turn === 2);
+        document.getElementById("turnIndicator1").innerText =
+          state.turn === 1 ? "ACTIVE" : "WAITING";
+        document.getElementById("turnIndicator2").innerText =
+          state.turn === 2 ? "ACTIVE" : "WAITING";
+        scoreWhiteElement.innerText = countPoints(1);
+        scoreBlackElement.innerText = countPoints(2);
+      }
 
-      // Initialize
+      function pushLog(msg) {
+        logElement.innerText = msg;
+      }
+
+      function resetGame() {
+        state.board = Array.from({ length: size }, () =>
+          Array(size).fill(null),
+        );
+        state.turn = 1;
+        state.gameOver = false;
+        state.gameMoves = [];
+        state.undoStack = [];
+        buildBoard();
+        render();
+      }
+
+      function endGame(winner, reason) {
+        state.gameOver = true;
+        goTitle.innerText = winner
+          ? `${players[winner].name.toUpperCase()} WINS`
+          : "DRAW";
+        goSubtitle.innerText = reason;
+        goP1Score.innerText = countPoints(1);
+        goP2Score.innerText = countPoints(2);
+        gameOverModal.classList.add("show");
+      }
+
+      // --- GAME RULES ---
+      function countPoints(p) {
+        return state.board.flat().filter((t) => t && t.player === p && t.yugo)
+          .length;
+      }
+      function isBoardFull() {
+        return state.board.flat().every((t) => t !== null);
+      }
+      function inBounds(r, c) {
+        return r >= 0 && r < size && c >= 0 && c < size;
+      }
+      function wouldCreateLongLine(r, c, p) {
+        for (let [dr, dc] of [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, -1],
+        ]) {
+          let count = 1;
+          for (let m of [-1, 1]) {
+            let nr = r + dr * m,
+              nc = c + dc * m;
+            while (inBounds(nr, nc) && state.board[nr][nc]?.player === p) {
+              count++;
+              nr += dr * m;
+              nc += dc * m;
+            }
+          }
+          if (count > 4) return true;
+        }
+        return false;
+      }
+      function findAllStraightLines(r, c, p) {
+        const lines = [];
+        for (let [dr, dc] of [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, -1],
+        ]) {
+          let line = [[r, c]];
+          for (let m of [-1, 1]) {
+            let nr = r + dr * m,
+              nc = c + dc * m;
+            while (inBounds(nr, nc) && state.board[nr][nc]?.player === p) {
+              line.push([nr, nc]);
+              nr += dr * m;
+              nc += dc * m;
+            }
+          }
+          if (line.length === 4) lines.push(line);
+        }
+        return lines;
+      }
+      function formYugo(lines, p, anchor) {
+        lines.flat().forEach(([r, c]) => {
+          if (!state.board[r][c].yugo) state.board[r][c] = null;
+        });
+        state.board[anchor.row][anchor.col] = { player: p, yugo: true };
+      }
+      function checkIgo(p) {
+        const yg = [];
+        for (let r = 0; r < size; r++)
+          for (let c = 0; c < size; c++)
+            if (state.board[r][c]?.player === p && state.board[r][c].yugo)
+              yg.push([r, c]);
+        for (let [r, c] of yg) {
+          for (let [dr, dc] of [
+            [0, 1],
+            [1, 0],
+            [1, 1],
+            [1, -1],
+          ]) {
+            let cnt = 1;
+            for (let i = 1; i < 4; i++)
+              if (yg.some((y) => y[0] === r + dr * i && y[1] === c + dc * i))
+                cnt++;
+            if (cnt >= 4) return true;
+          }
+        }
+        return false;
+      }
+
+      // --- UI EVENTS ---
+
+      // Fix for the History Close button
+      document.getElementById("closeLogBtn").onclick = () =>
+        logModal.classList.remove("show");
+
+      undoBtn.onclick = () => {
+        if (state.aiThinking || state.undoStack.length < 2) return;
+        state.undoStack.pop();
+        const previousState = JSON.parse(state.undoStack.pop());
+
+        state.board = previousState.board;
+        state.turn = previousState.turn;
+        state.gameMoves = previousState.gameMoves;
+        render();
+        pushLog("TACTICAL ROLLBACK EXECUTED.");
+      };
+
+      resignBtn.onclick = () => {
+        const aiId = playerColor === 1 ? 2 : 1;
+        endGame(aiId, "COMMANDER RETREATED FROM FIELD.");
+      };
+
+      document.getElementById("playAgainBtn").onclick = () => {
+        gameOverModal.classList.remove("show");
+        resetGame();
+        if (playerColor === 2) setTimeout(makeAIMove, 1000);
+      };
+
+      viewLogBtn.onclick = () => {
+        historyList.innerHTML = state.gameMoves
+          .map(
+            (m, i) =>
+              `<div style="margin-bottom:5px"><span style="color:var(--accent)">${i + 1}.</span> ${m.toUpperCase()}</div>`,
+          )
+          .join("");
+        logModal.classList.add("show");
+      };
+
       buildBoard();
-      render();
     </script>
   </body>
 </html>
