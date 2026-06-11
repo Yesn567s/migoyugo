@@ -113,7 +113,21 @@
 
     <!-- Settlement Popup -->
     <div id="gameOverModal" class="modal">
-      <div class="modal-box">
+      <div class="modal-box" style="position: relative">
+        <span
+          id="closeGameOverBtn"
+          style="
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dim);
+            font-weight: bold;
+            transition: 0.2s;
+          "
+          >&times;</span
+        >
         <div
           style="
             font-size: 0.6rem;
@@ -303,6 +317,7 @@
       const logModal = document.getElementById("logModal");
       const viewLogBtn = document.getElementById("viewLogBtn");
       const historyList = document.getElementById("historyList");
+      const closeGameOverBtn = document.getElementById("closeGameOverBtn");
 
       // --- GAME STATE ---
       let playerColor = 1;
@@ -624,13 +639,28 @@
         if (playerColor === 2) setTimeout(makeAIMove, 1000);
       };
 
+      // Add these lines to close the modal:
+      closeGameOverBtn.onclick = () => {
+        gameOverModal.classList.remove("show");
+      };
+
       viewLogBtn.onclick = () => {
-        historyList.innerHTML = state.gameMoves
-          .map(
-            (m, i) =>
-              `<div style="margin-bottom:5px"><span style="color:var(--accent)">${i + 1}.</span> ${m.toUpperCase()}</div>`,
-          )
-          .join("");
+        let groupedMoves = "";
+
+        // Loop through the moves array, jumping 2 steps at a time
+        for (let i = 0; i < state.gameMoves.length; i += 2) {
+          const turnNum = i / 2 + 1;
+          const p1Move = state.gameMoves[i].toUpperCase();
+
+          // Check if player 2 has made a move yet for this turn
+          const p2Move = state.gameMoves[i + 1]
+            ? state.gameMoves[i + 1].toUpperCase()
+            : "";
+
+          groupedMoves += `<div style="margin-bottom:5px"><span style="color:var(--accent)">${turnNum}.</span> ${p1Move} ${p2Move}</div>`;
+        }
+
+        historyList.innerHTML = groupedMoves;
         logModal.classList.add("show");
       };
 

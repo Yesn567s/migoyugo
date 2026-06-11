@@ -8,11 +8,22 @@ let searchEndTime = 0;
 let nodesEvaluated = 0;
 
 // --- THE ZOBRIST MEMORY BANK ---
-const ttMap = new Map();
+// A standard size is roughly 1-2 million entries. Let's use roughly 1 million.
+// Using a prime number (1048583) or a power of two is best for modulo indexing.
+const TT_SIZE = 1048583;
+const ttArray = new Array(TT_SIZE); // Pre-allocate the memory
 
-// 8x8 board = 64 squares. 4 piece types (P1 Migo, P1 Yugo, P2 Migo, P2 Yugo)
-// 64 * 4 = 256 unique piece states.
-const ZOBRIST_TABLE = new BigInt64Array(256);
+// (Keep your ZOBRIST_TABLE setup exactly as you have it below this)
+
+// 8x8 board = 64 squares. 4 piece types = 256 unique piece states.
+// We add +1 extra slot to store the hash key for the turn toggle.
+const ZOBRIST_TABLE = new BigUint64Array(257);
+
+// Fill the entire table instantly with true, cryptographically secure 64-bit random integers
+crypto.getRandomValues(ZOBRIST_TABLE);
+
+// Save the very last key to represent Player 2's turn
+const ZOBRIST_TURN_KEY = ZOBRIST_TABLE[256];
 
 // Initialize the table with random 64-bit integers once when the worker loads
 for (let i = 0; i < 256; i++) {
@@ -32,7 +43,7 @@ function getZobristIndex(row, col, player, isYugo) {
 let currentHash = 0n;
 
 // Calculate the hash from scratch ONLY ONCE at the start of the turn
-function computeInitialHash(board) {
+function computeInitialHash(board, turn) {
   let hash = 0n;
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
@@ -42,17 +53,22 @@ function computeInitialHash(board) {
       }
     }
   }
+
+  // NEW: If it is Player 2's turn, flip the turn key
+  if (turn === 2) {
+    hash ^= ZOBRIST_TURN_KEY;
+  }
+
   return hash;
 }
 // -----------------------------
 
 self.onmessage = function (e) {
-  ttMap.clear();
   const { board, playerColor, turn, maxDepth } = e.data;
   const searchMaxDepth = Number.isFinite(maxDepth) ? maxDepth : MAX_DEPTH;
 
   // --- NEW: Calculate the starting hash ---
-  currentHash = computeInitialHash(board);
+  currentHash = computeInitialHash(board, turn);
 
   // Get all legal moves
   const legalMoves = [];
@@ -108,12 +124,8 @@ self.onmessage = function (e) {
     }
   }
 
-  const rootMaxMoves = 25;
-  const movesToScore =
-    rootMoves.length > 0
-      ? rootMoves.slice(0, Math.min(rootMaxMoves, rootMoves.length))
-      : legalMoves.slice(0, Math.min(rootMaxMoves, legalMoves.length));
-
+  // No artificial limits. We explore all critical moves, or all legal moves if there are no critical ones.
+  const movesToScore = rootMoves.length > 0 ? rootMoves : legalMoves;
   // ==========================================
 
   // Set the time limit (e.g., 1500 milliseconds = 1.5 seconds)
@@ -207,8 +219,13 @@ function minimax(
   const hash = currentHash;
   const remainingDepth = maxDepth - depth;
 
-  if (ttMap.has(hash)) {
-    const stored = ttMap.get(hash);
+  // Convert BigInt to an index within our array limits
+  const ttIndex = Number(hash % BigInt(TT_SIZE));
+  const stored = ttArray[ttIndex];
+
+  // We must verify the stored hash matches our current hash to prevent "collisions"
+  // where two different board states happen to share the same ttIndex
+  if (stored && stored.hash === hash) {
     // Only use the stored memory if we searched deep enough last time
     if (stored.remainingDepth >= remainingDepth) {
       if (stored.flag === "EXACT") return stored.score;
@@ -257,11 +274,8 @@ function minimax(
         )
       : [];
 
-  const maxMoves = 25;
-  const movesToExplore =
-    criticalMoves.length > 0
-      ? criticalMoves.slice(0, Math.min(maxMoves, criticalMoves.length))
-      : legalMoves.slice(0, Math.min(maxMoves, legalMoves.length));
+  // Let the Alpha-Beta math naturally prune bad branches!
+  const movesToExplore = criticalMoves.length > 0 ? criticalMoves : legalMoves;
 
   // --- 4. THE SEARCH LOOP ---
   let originalAlpha = alpha;
@@ -299,6 +313,8 @@ function minimax(
       // FAST UNDO
       undoMove(board, history);
 
+      if (searchAborted) return 0;
+
       maxEval = Math.max(maxEval, moveScore);
       alpha = Math.max(alpha, moveScore);
       if (beta <= alpha) break;
@@ -335,6 +351,8 @@ function minimax(
       // FAST UNDO
       undoMove(board, history);
 
+      if (searchAborted) return 0;
+
       minEval = Math.min(minEval, moveScore);
       beta = Math.min(beta, moveScore);
       if (beta <= alpha) break;
@@ -343,15 +361,24 @@ function minimax(
   }
 
   // --- 5. SAVE TO TRANSPOSITION TABLE ---
-  let flag = "EXACT";
-  if (bestScore <= originalAlpha) flag = "UPPERBOUND";
-  else if (bestScore >= beta) flag = "LOWERBOUND";
+  // NEW: Only save to memory if we actually finished the math!
+  if (!searchAborted) {
+    let flag = "EXACT";
+    if (bestScore <= originalAlpha) flag = "UPPERBOUND";
+    else if (bestScore >= beta) flag = "LOWERBOUND";
 
-  ttMap.set(hash, {
-    score: bestScore,
-    remainingDepth: remainingDepth,
-    flag: flag,
-  });
+    const ttIndex = Number(hash % BigInt(TT_SIZE));
+    const existingEntry = ttArray[ttIndex];
+
+    if (!existingEntry || remainingDepth >= existingEntry.remainingDepth) {
+      ttArray[ttIndex] = {
+        hash: hash,
+        score: bestScore,
+        remainingDepth: remainingDepth,
+        flag: flag,
+      };
+    }
+  }
 
   return bestScore;
 }
@@ -363,6 +390,9 @@ function applyMove(board, row, col, player) {
     changes: [],
     hashToggles: [], // NEW: Track what we flip to easily undo it
   };
+
+  currentHash ^= ZOBRIST_TURN_KEY;
+  history.hashToggles.push(ZOBRIST_TURN_KEY);
 
   // 1. Place the new Migo
   history.changes.push({ r: row, c: col, prev: null });
