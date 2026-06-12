@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Migoyugo 3D - Tactical Field</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #060912;
+        font-family: monospace;
+        color: white;
+        user-select: none;
+      }
+      #ui-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        pointer-events: none;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: space-between;
+        z-index: 5;
+      }
+      .panel {
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid #33ccff;
+        padding: 15px;
+        border-radius: 8px;
+        pointer-events: auto;
+      }
+      h1 {
+        margin: 0 0 10px 0;
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        color: #33ccff;
+      }
+      .stats {
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+      #log {
+        margin-top: 15px;
+        color: #ffcc00;
+        font-size: 0.8rem;
+      }
+
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 4;
+      }
+
+      #setup-modal {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(6, 9, 18, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        pointer-events: auto;
+      }
+      .modal-box {
+        background: #111;
+        border: 1px solid #33ccff;
+        padding: 30px;
+        border-radius: 8px;
+        text-align: center;
+      }
+      .modal-box .input-group {
+        margin-bottom: 15px;
+        text-align: right;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .modal-box select,
+      .modal-box input {
+        background: #000;
+        color: #33ccff;
+        border: 1px solid #555;
+        padding: 5px;
+        font-family: monospace;
+        font-size: 1rem;
+        user-select: auto;
+      }
+      .modal-box input {
+        width: 60px;
+        text-align: center;
+      }
+      .modal-box select {
+        width: 180px;
+      }
+      .modal-box button {
+        background: #33ccff;
+        color: #000;
+        border: none;
+        padding: 10px 20px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 20px;
+        font-family: monospace;
+        transition: 0.2s;
+        width: 100%;
+      }
+      .modal-box button:hover {
+        background: #fff;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  </head>
+  <body>
+    <div id="setup-modal">
+      <div class="modal-box">
+        <h2 style="color: #33ccff; margin-top: 0; letter-spacing: 2px">
+          INITIALIZE ENGAGEMENT
+        </h2>
+        <p style="color: #aaa; margin-bottom: 25px">
+          Configure Tactical Parameters
+        </p>
+
+        <div class="input-group">
+          <label style="font-weight: bold">COLOR: </label>
+          <select id="playerColorSelect">
+            <option value="1">WHITE (1ST)</option>
+            <option value="2">BLACK (2ND)</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label style="font-weight: bold">AI DEPTH (1-6): </label>
+          <input type="number" id="aiMaxDepth" min="1" max="6" value="2" />
+        </div>
+
+        <button id="startGameBtn">BEGIN SIMULATION</button>
+      </div>
+    </div>
+
+    <div id="ui-layer">
+      <div class="panel">
+        <h1>MIGOYUGO 3D</h1>
+        <div class="stats" id="turn-indicator">ACTIVE: WHITE</div>
+        <div class="stats">WHITE SCORE: <span id="score-white">0</span></div>
+        <div class="stats">BLACK SCORE: <span id="score-black">0</span></div>
+        <div id="log">AWAITING INITIALIZATION...</div>
+      </div>
+      <div class="panel" style="text-align: right; max-width: 250px">
+        <div style="font-size: 0.8rem; color: #aaa; line-height: 1.5">
+          <b>CONTROLS:</b><br />
+          Right-Click + Drag : Look<br />
+          WASD : Move<br />
+          Space / Ctrl : Ascend / Descend<br />
+          Left-Click : Interact<br />
+          Left-Click + Drag : Scroll Matrix<br />
+          <b>`</b> (Backtick) : Undo Move<br />
+          <b>L</b> : Resign
+        </div>
+      </div>
+    </div>
+
+    <div id="crosshair"></div>
+
+    <script>
+      // ==========================================
+      // --- AUDIO SYSTEM ---
+      // ==========================================
+      const sfxConfig = {
+        bgm: "./assets/sfx/Monkeys-Spinning-Monkeys(chosic.com).mp3", // e.g., "sounds/war_room_bgm.mp3"
+        placeWhite: "./assets/sfx/white.mp3", // e.g., "sounds/click_light.wav"
+        placeBlack: "./assets/sfx/black.mp3", // e.g., "sounds/click_heavy.wav"
+        yugoFormed: "./assets/sfx/form.mp3", // e.g., "sounds/powerup_surge.wav"
+      };
+
+      const audioFiles = {
+        bgm: new Audio(sfxConfig.bgm),
+        placeWhite: new Audio(sfxConfig.placeWhite),
+        placeBlack: new Audio(sfxConfig.placeBlack),
+        yugoFormed: new Audio(sfxConfig.yugoFormed),
+      };
+
+      audioFiles.bgm.loop = true;
+      audioFiles.bgm.volume = 0.1;
+
+      function playSound(type) {
+        const audioObj = audioFiles[type];
+        if (!audioObj.src || audioObj.src === window.location.href) return;
+
+        if (type === "bgm") {
+          audioObj
+            .play()
+            .catch((e) => console.log("BGM Playback prevented:", e));
+        } else {
+          const clone = audioObj.cloneNode();
+          clone.volume = 0.8;
+          clone.play().catch((e) => console.log("SFX Playback prevented:", e));
+        }
+      }
+      // ==========================================
+
+      const SIZE = 8;
+      const TILE_SIZE = 1.2;
+      const BOARD_OFFSET = (SIZE * TILE_SIZE) / 2 - TILE_SIZE / 2;
+
+      const aiWorker = new Worker("ai_worker.js");
+      let playerColor = 1;
+      let aiMaxDepth = 2;
+
+      const state = {
+        board: Array.from({ length: SIZE }, () => Array(SIZE).fill(null)),
+        meshes: Array.from({ length: SIZE }, () => Array(SIZE).fill(null)),
+        undoStack: [],
+        gameMoves: [],
+        turn: 1,
+        gameOver: false,
+        gameStarted: false,
+        aiThinking: false,
+        terminalTitle: "SYSTEM STANDBY",
+        terminalSubtitle: "AWAITING INIT",
+        terminalColor: "#aaaaaa",
+      };
+
+      // --- INITIALIZATION ---
+      document.getElementById("startGameBtn").addEventListener("click", () => {
+        aiMaxDepth = parseInt(document.getElementById("aiMaxDepth").value) || 2;
+        playerColor =
+          parseInt(document.getElementById("playerColorSelect").value) || 1;
+
+        document.getElementById("setup-modal").style.display = "none";
+        state.gameStarted = true;
+
+        state.terminalTitle = "TACTICAL FIELD";
+        state.terminalSubtitle = "ONLINE";
+        state.terminalColor = "#33ccff";
+
+        pushLog("SYSTEM ONLINE. AWAITING ORDERS.");
+        updateUI();
+
+        playSound("bgm");
+
+        if (playerColor === 2) {
+          state.aiThinking = true;
+          pushLog("AI UNIT CALCULATING FIRST STRIKE...");
+          setTimeout(() => {
+            aiWorker.postMessage({
+              board: state.board,
+              playerColor: playerColor,
+              turn: state.turn,
+              maxDepth: aiMaxDepth,
+            });
+          }, 1000);
+        }
+      });
+
+      // --- THREE.JS SETUP ---
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060912);
+      scene.fog = new THREE.Fog(0x060912, 5, 40);
+
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+      camera.position.set(0, 8, 10);
+      camera.rotation.order = "YXZ";
+      camera.rotation.x = -Math.PI / 4;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(5, 15, 5);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      const interactables = [];
+
+      // --- BOARD GENERATION ---
+      const boardGroup = new THREE.Group();
+      scene.add(boardGroup);
+
+      const matA = new THREE.MeshStandardMaterial({
+        color: 0x111111,
+        roughness: 0.8,
+      });
+      const matB = new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 0.8,
+      });
+      const tileGeometry = new THREE.BoxGeometry(
+        TILE_SIZE * 0.95,
+        0.2,
+        TILE_SIZE * 0.95,
+      );
+
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const isMatA = (r + c) % 2 === 0;
+          const tile = new THREE.Mesh(tileGeometry, isMatA ? matA : matB);
+
+          tile.position.x = c * TILE_SIZE - BOARD_OFFSET;
+          tile.position.z = r * TILE_SIZE - BOARD_OFFSET;
+          tile.position.y = 0;
+          tile.receiveShadow = true;
+          tile.userData = { type: "tile", row: r, col: c };
+
+          boardGroup.add(tile);
+          interactables.push(tile);
+        }
+      }
+
+      // --- LEFT MONOLITH (COMMAND TERMINAL) ---
+      const terminalGroup = new THREE.Group();
+      terminalGroup.position.set(-8, 2.5, 0);
+      terminalGroup.rotation.y = Math.PI / 4;
+      scene.add(terminalGroup);
+
+      const termGeo = new THREE.BoxGeometry(6, 4, 0.5);
+      const termMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+      const terminalBody = new THREE.Mesh(termGeo, termMat);
+      terminalBody.castShadow = true;
+      terminalGroup.add(terminalBody);
+
+      const screenCanvas = document.createElement("canvas");
+      screenCanvas.width = 512;
+      screenCanvas.height = 256;
+      const screenCtx = screenCanvas.getContext("2d");
+      const screenTexture = new THREE.CanvasTexture(screenCanvas);
+
+      const screenGeo = new THREE.PlaneGeometry(5.8, 2.8);
+      const screenMat = new THREE.MeshBasicMaterial({ map: screenTexture });
+      const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+      screenMesh.position.set(0, 0.4, 0.26);
+      terminalGroup.add(screenMesh);
+
+      // Added fontSize parameter to shrink text for the 3 buttons
+      function createBtnTexture(text, bgColorStr, fgColorStr, fontSize = 26) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = bgColorStr;
+        ctx.fillRect(0, 0, 256, 64);
+        ctx.fillStyle = fgColorStr;
+        ctx.font = `bold ${fontSize}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, 128, 32);
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      // Shrunk button width from 2.5 to 1.7 to fit 3 buttons
+      const btnGeo = new THREE.BoxGeometry(1.7, 0.6, 0.2);
+
+      // RESTART (Green - Left)
+      const restartSideMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff88,
+      });
+      const restartFrontMat = new THREE.MeshStandardMaterial({
+        map: createBtnTexture("RESTART", "#00ff88", "#003311"),
+        emissive: 0x002211,
+      });
+      const restartBtn = new THREE.Mesh(btnGeo, [
+        restartSideMat,
+        restartSideMat,
+        restartSideMat,
+        restartSideMat,
+        restartFrontMat,
+        restartSideMat,
+      ]);
+      restartBtn.position.set(-1.9, -1.4, 0.26);
+      restartBtn.userData = { type: "button", action: "restart" };
+      terminalGroup.add(restartBtn);
+      interactables.push(restartBtn);
+
+      // CHANGE SETUP (Yellow - Middle)
+      const changeSideMat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+      const changeFrontMat = new THREE.MeshStandardMaterial({
+        map: createBtnTexture("CHANGE", "#ffcc00", "#332200"),
+        emissive: 0x332200,
+      });
+      const changeBtn = new THREE.Mesh(btnGeo, [
+        changeSideMat,
+        changeSideMat,
+        changeSideMat,
+        changeSideMat,
+        changeFrontMat,
+        changeSideMat,
+      ]);
+      changeBtn.position.set(0, -1.4, 0.26);
+      changeBtn.userData = { type: "button", action: "reconfig" };
+      terminalGroup.add(changeBtn);
+      interactables.push(changeBtn);
+
+      // MAIN MENU (Red - Right)
+      const menuSideMat = new THREE.MeshStandardMaterial({ color: 0xff3366 });
+      const menuFrontMat = new THREE.MeshStandardMaterial({
+        map: createBtnTexture("MENU", "#ff3366", "#330011"),
+        emissive: 0x220011,
+      });
+      const menuBtn = new THREE.Mesh(btnGeo, [
+        menuSideMat,
+        menuSideMat,
+        menuSideMat,
+        menuSideMat,
+        menuFrontMat,
+        menuSideMat,
+      ]);
+      menuBtn.position.set(1.9, -1.4, 0.26);
+      menuBtn.userData = { type: "button", action: "menu" };
+      terminalGroup.add(menuBtn);
+      interactables.push(menuBtn);
+
+      function updateTerminalScreen() {
+        screenCtx.fillStyle = "#0a0a1a";
+        screenCtx.fillRect(0, 0, 512, 256);
+        screenCtx.textAlign = "center";
+        screenCtx.fillStyle = state.terminalColor;
+        screenCtx.font = "bold 50px monospace";
+        screenCtx.fillText(state.terminalTitle, 256, 80);
+        screenCtx.fillStyle = "#ffffff";
+        screenCtx.font = "24px monospace";
+        screenCtx.fillText(state.terminalSubtitle, 256, 130);
+
+        let wScore = document.getElementById("score-white")
+          ? document.getElementById("score-white").innerText
+          : "0";
+        let bScore = document.getElementById("score-black")
+          ? document.getElementById("score-black").innerText
+          : "0";
+
+        screenCtx.fillStyle = "#222233";
+        screenCtx.fillRect(50, 165, 412, 2);
+        screenCtx.fillStyle = "#aaaaaa";
+        screenCtx.font = "bold 26px monospace";
+        screenCtx.fillText(`W: ${wScore}  |  B: ${bScore}`, 256, 215);
+        screenTexture.needsUpdate = true;
+      }
+      updateTerminalScreen();
+
+      // --- RIGHT MONOLITH (ACTION MATRIX / MOVE LOG) ---
+      let logScrollOffset = 999999;
+      let isDraggingLog = false;
+
+      const logGroup = new THREE.Group();
+      logGroup.position.set(8, 2.5, 0);
+      logGroup.rotation.y = -Math.PI / 4;
+      scene.add(logGroup);
+
+      const logBody = new THREE.Mesh(termGeo, termMat);
+      logBody.castShadow = true;
+      logGroup.add(logBody);
+
+      const logCanvas = document.createElement("canvas");
+      logCanvas.width = 512;
+      logCanvas.height = 512;
+      const logCtx = logCanvas.getContext("2d");
+      const logTexture = new THREE.CanvasTexture(logCanvas);
+
+      const logScreenGeo = new THREE.PlaneGeometry(5.8, 3.8);
+      const logScreenMat = new THREE.MeshBasicMaterial({ map: logTexture });
+      const logScreenMesh = new THREE.Mesh(logScreenGeo, logScreenMat);
+      logScreenMesh.position.set(0, 0, 0.26);
+      logScreenMesh.userData = { type: "log" };
+      interactables.push(logScreenMesh);
+      logGroup.add(logScreenMesh);
+
+      function updateLogScreen() {
+        logCtx.fillStyle = "#060912";
+        logCtx.fillRect(0, 0, 512, 512);
+
+        const formattedTurns = [];
+        for (let i = 0; i < state.gameMoves.length; i += 2) {
+          const turnNum = i / 2 + 1;
+          const p1Move = state.gameMoves[i];
+          const p2Move = state.gameMoves[i + 1] || "";
+          formattedTurns.push(
+            `${turnNum.toString().padStart(2, " ")}. ${p1Move.padEnd(5, " ")} ${p2Move}`,
+          );
+        }
+
+        const lineHeight = 40;
+        const totalTextHeight = formattedTurns.length * lineHeight;
+        const visibleHeight = 512 - 110;
+
+        let maxScroll = Math.max(0, totalTextHeight - visibleHeight + 20);
+        logScrollOffset = Math.max(0, Math.min(logScrollOffset, maxScroll));
+
+        logCtx.fillStyle = "#ffffff";
+        logCtx.font = "28px monospace";
+        logCtx.textAlign = "left";
+
+        let startY = 110 - logScrollOffset;
+        formattedTurns.forEach((line, index) => {
+          let yPos = startY + index * lineHeight;
+          if (yPos > 60 && yPos < 550) {
+            logCtx.fillText(line, 60, yPos);
+          }
+        });
+
+        logCtx.fillStyle = "#060912";
+        logCtx.fillRect(0, 0, 512, 75);
+        logCtx.fillStyle = "#ffcc00";
+        logCtx.font = "bold 32px monospace";
+        logCtx.textAlign = "center";
+        logCtx.fillText("ACTION MATRIX", 256, 45);
+        logCtx.fillStyle = "#222233";
+        logCtx.fillRect(30, 60, 452, 2);
+
+        logTexture.needsUpdate = true;
+      }
+      updateLogScreen();
+
+      // --- PIECE GEOMETRY & TEXTURES ---
+      function createYugoTexture(player, lineCount) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext("2d");
+        const bgColor = player === 1 ? "#ffffff" : "#222222";
+        const fgColor = player === 1 ? "#ff3366" : "#33ccff";
+
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, 128, 128);
+        ctx.fillStyle = fgColor;
+        ctx.beginPath();
+
+        if (lineCount === 1) {
+          ctx.arc(64, 64, 25, 0, Math.PI * 2);
+        } else if (lineCount === 2) {
+          ctx.ellipse(64, 64, 20, 40, 0, 0, Math.PI * 2);
+        } else if (lineCount === 3) {
+          ctx.moveTo(64, 24);
+          ctx.lineTo(104, 94);
+          ctx.lineTo(24, 94);
+        } else if (lineCount >= 4) {
+          ctx.rect(34, 34, 60, 60);
+        }
+
+        ctx.fill();
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      const migoGeo = new THREE.CylinderGeometry(0.4, 0.45, 0.3, 32);
+      const colorWhite = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.2,
+      });
+      const colorBlack = new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 0.2,
+      });
+
+      // --- CUSTOM CONTROLS & HOTKEYS ---
+      const keys = {
+        w: false,
+        a: false,
+        s: false,
+        d: false,
+        space: false,
+        ctrl: false,
+      };
+
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.target.tagName.toLowerCase() === "input" ||
+          e.target.tagName.toLowerCase() === "select"
+        )
+          return;
+        const k = e.key.toLowerCase();
+        if (k === "w") keys.w = true;
+        if (k === "a") keys.a = true;
+        if (k === "s") keys.s = true;
+        if (k === "d") keys.d = true;
+        if (k === " ") keys.space = true;
+        if (k === "control") keys.ctrl = true;
+
+        if (e.key === "`") executeUndo();
+        if (k === "l") executeResign();
+      });
+
+      document.addEventListener("keyup", (e) => {
+        const k = e.key.toLowerCase();
+        if (k === "w") keys.w = false;
+        if (k === "a") keys.a = false;
+        if (k === "s") keys.s = false;
+        if (k === "d") keys.d = false;
+        if (k === " ") keys.space = false;
+        if (k === "control") keys.ctrl = false;
+      });
+
+      let isRightClicking = false;
+      let pitch = camera.rotation.x;
+      let yaw = camera.rotation.y;
+
+      window.addEventListener("contextmenu", (e) => e.preventDefault());
+
+      renderer.domElement.addEventListener("mousedown", (e) => {
+        if (e.button === 2) isRightClicking = true;
+      });
+
+      window.addEventListener("mouseup", (e) => {
+        if (e.button === 2) isRightClicking = false;
+        if (e.button === 0) isDraggingLog = false;
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (isRightClicking) {
+          yaw -= (e.movementX || 0) * 0.003;
+          pitch -= (e.movementY || 0) * 0.003;
+          pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+          camera.rotation.set(pitch, yaw, 0, "YXZ");
+        }
+
+        if (isDraggingLog) {
+          logScrollOffset -= (e.movementY || 0) * 1.5;
+          updateLogScreen();
+        }
+      });
+
+      // --- RAYCASTING (Board + Buttons + Log) ---
+      const raycaster = new THREE.Raycaster();
+      const crosshairTarget = new THREE.Vector2(0, 0);
+
+      window.addEventListener("mousedown", (event) => {
+        if (event.button !== 0 || !state.gameStarted) return;
+
+        raycaster.setFromCamera(crosshairTarget, camera);
+        const intersects = raycaster.intersectObjects(interactables);
+
+        if (intersects.length > 0) {
+          const hit = intersects[0].object;
+
+          if (hit.userData.type === "log") {
+            isDraggingLog = true;
+            return;
+          }
+
+          if (hit.userData.type === "button") {
+            if (hit.userData.action === "restart") {
+              resetGame(true); // Restart and auto-play AI if needed
+            }
+            if (hit.userData.action === "reconfig") {
+              resetGame(false); // Clear board, DO NOT auto-play AI
+              state.gameStarted = false;
+              document.getElementById("setup-modal").style.display = "flex";
+            }
+            if (hit.userData.action === "menu") {
+              window.location.href = "index.html";
+            }
+            return;
+          }
+
+          if (hit.userData.type === "tile") {
+            if (
+              state.gameOver ||
+              state.aiThinking ||
+              state.turn !== playerColor
+            )
+              return;
+            const { row, col } = hit.userData;
+
+            if (!state.board[row][col]) {
+              if (wouldCreateLongLine(row, col, state.turn)) {
+                const originalMat = hit.material;
+                const errorMat = new THREE.MeshStandardMaterial({
+                  color: 0xff0000,
+                  emissive: 0xaa0000,
+                });
+                hit.material = errorMat;
+                setTimeout(() => {
+                  hit.material = originalMat;
+                }, 500);
+                pushLog("WARNING: CANNOT CREATE LINE LONGER THAN 4.");
+                return;
+              }
+
+              saveUndoState();
+              placeTile(row, col);
+            }
+          }
+        }
+      });
+
+      // --- GAME STATE LOGIC ---
+      function resetGame(autoStartAI = true) {
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            state.board[r][c] = null;
+            if (state.meshes[r][c]) {
+              scene.remove(state.meshes[r][c]);
+              state.meshes[r][c] = null;
+            }
+          }
+        }
+        state.turn = 1;
+        state.gameOver = false;
+        state.undoStack = [];
+        state.gameMoves = [];
+        logScrollOffset = 999999;
+
+        state.terminalTitle = "TACTICAL FIELD";
+        state.terminalSubtitle = "ONLINE";
+        state.terminalColor = "#33ccff";
+
+        pushLog("BOARD CLEARED. AWAITING ORDERS.");
+        updateUI();
+
+        if (autoStartAI && playerColor === 2) {
+          state.aiThinking = true;
+          pushLog("AI UNIT CALCULATING FIRST STRIKE...");
+          setTimeout(() => {
+            aiWorker.postMessage({
+              board: state.board,
+              playerColor: playerColor,
+              turn: state.turn,
+              maxDepth: aiMaxDepth,
+            });
+          }, 1000);
+        }
+      }
+
+      function saveUndoState() {
+        state.undoStack.push(
+          JSON.stringify({
+            board: state.board,
+            turn: state.turn,
+            gameMoves: state.gameMoves,
+          }),
+        );
+      }
+
+      function executeUndo() {
+        if (state.aiThinking || state.undoStack.length < 2 || state.gameOver)
+          return;
+        state.undoStack.pop();
+        const prevState = JSON.parse(state.undoStack.pop());
+
+        state.board = prevState.board;
+        state.turn = prevState.turn;
+        state.gameMoves = prevState.gameMoves;
+        logScrollOffset = 999999;
+
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            if (state.meshes[r][c]) {
+              scene.remove(state.meshes[r][c]);
+              state.meshes[r][c] = null;
+            }
+            const tile = state.board[r][c];
+            if (tile)
+              spawnPiece(
+                r,
+                c,
+                tile.player,
+                tile.yugo,
+                tile.lineCount || 1,
+                true,
+              );
+          }
+        }
+        updateUI();
+        pushLog("TACTICAL ROLLBACK EXECUTED.");
+      }
+
+      function executeResign() {
+        if (state.gameOver || !state.gameStarted) return;
+        state.gameOver = true;
+        const winnerName = playerColor === 1 ? "BLACK" : "WHITE";
+        pushLog(`COMMANDER RETREATED. ${winnerName} WINS.`);
+
+        state.terminalTitle = "DEFEAT";
+        state.terminalSubtitle = "COMMANDER RETREATED";
+        state.terminalColor = "#ff3366";
+        updateUI();
+      }
+
+      function placeTile(row, col) {
+        const p = state.turn;
+        state.board[row][col] = { player: p, yugo: false, lineCount: 0 };
+        spawnPiece(row, col, p, false);
+
+        if (p === 1) playSound("placeWhite");
+        else playSound("placeBlack");
+
+        const letter = String.fromCharCode(97 + col);
+        const number = SIZE - row;
+        let notation = `${letter}${number}`;
+
+        const lines = findAllStraightLines(row, col, p);
+
+        if (lines.length > 0) {
+          notation += "*";
+          pushLog("TACTICAL YUGO FORMED!");
+
+          setTimeout(() => {
+            lines.flat().forEach(([r, c]) => {
+              if (!state.board[r][c].yugo) {
+                state.board[r][c] = null;
+                if (state.meshes[r][c]) {
+                  scene.remove(state.meshes[r][c]);
+                  state.meshes[r][c] = null;
+                }
+              }
+            });
+            state.board[row][col] = {
+              player: p,
+              yugo: true,
+              lineCount: lines.length,
+            };
+            spawnPiece(row, col, p, true, lines.length);
+
+            playSound("yugoFormed");
+
+            state.gameMoves.push(notation);
+            logScrollOffset = 999999;
+            updateUI();
+
+            evaluateTurnEnd(p);
+          }, 1000);
+        } else {
+          state.gameMoves.push(notation);
+          logScrollOffset = 999999;
+          updateUI();
+
+          evaluateTurnEnd(p);
+        }
+      }
+
+      function evaluateTurnEnd(p) {
+        if (checkIgo(p)) {
+          state.gameOver = true;
+          const isPlayerWinner = p === playerColor;
+          pushLog(`VICTORY: ${p === 1 ? "WHITE" : "BLACK"} ACHIEVED IGO`);
+
+          if (isPlayerWinner) {
+            state.terminalTitle = "VICTORY";
+            state.terminalSubtitle = "TACTICAL IGO ACHIEVED";
+            state.terminalColor = "#00ff88";
+          } else {
+            state.terminalTitle = "DEFEAT";
+            state.terminalSubtitle = "AI SYSTEM OVERWHELM";
+            state.terminalColor = "#ff3366";
+          }
+          updateUI();
+        } else {
+          state.turn = state.turn === 1 ? 2 : 1;
+
+          if (!state.gameOver && state.turn !== playerColor) {
+            state.aiThinking = true;
+            pushLog("AI UNIT CALCULATING...");
+
+            setTimeout(() => {
+              saveUndoState();
+              aiWorker.postMessage({
+                board: state.board,
+                playerColor: playerColor,
+                turn: state.turn,
+                maxDepth: aiMaxDepth,
+              });
+            }, 1000);
+          }
+        }
+      }
+
+      function spawnPiece(row, col, p, isYugo, lineCount = 1, instant = false) {
+        if (state.meshes[row][col]) scene.remove(state.meshes[row][col]);
+
+        let material;
+        if (isYugo) {
+          const sideMat = p === 1 ? colorWhite : colorBlack;
+          const topMat = new THREE.MeshStandardMaterial({
+            map: createYugoTexture(p, lineCount),
+            roughness: 0.1,
+            emissive: p === 1 ? 0x330011 : 0x002233,
+          });
+          material = [sideMat, topMat, sideMat];
+        } else {
+          material = p === 1 ? colorWhite : colorBlack;
+        }
+
+        const mesh = new THREE.Mesh(migoGeo, material);
+        mesh.position.x = col * TILE_SIZE - BOARD_OFFSET;
+        mesh.position.z = row * TILE_SIZE - BOARD_OFFSET;
+
+        mesh.userData.targetY = 0.25;
+        mesh.position.y = instant ? 0.25 : 2;
+
+        mesh.castShadow = true;
+        scene.add(mesh);
+        state.meshes[row][col] = mesh;
+      }
+
+      aiWorker.onmessage = (e) => {
+        const { bestMove } = e.data;
+        setTimeout(() => {
+          state.aiThinking = false;
+          if (bestMove) placeTile(bestMove.row, bestMove.col);
+        }, 300);
+      };
+
+      function pushLog(msg) {
+        document.getElementById("log").innerText = msg;
+      }
+
+      // Centralized UI Update
+      function updateUI() {
+        document.getElementById("turn-indicator").innerText =
+          `ACTIVE: ${state.turn === 1 ? "WHITE" : "BLACK"}`;
+        document.getElementById("turn-indicator").style.color =
+          state.turn === 1 ? "#ffffff" : "#aaaaaa";
+
+        let whitePts = 0,
+          blackPts = 0;
+        state.board.flat().forEach((t) => {
+          if (t && t.yugo) {
+            t.player === 1 ? whitePts++ : blackPts++;
+          }
+        });
+        document.getElementById("score-white").innerText = whitePts;
+        document.getElementById("score-black").innerText = blackPts;
+
+        updateTerminalScreen();
+        updateLogScreen();
+      }
+
+      function inBounds(r, c) {
+        return r >= 0 && r < SIZE && c >= 0 && c < SIZE;
+      }
+
+      function wouldCreateLongLine(r, c, p) {
+        for (let [dr, dc] of [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, -1],
+        ]) {
+          let count = 1;
+          for (let m of [-1, 1]) {
+            let nr = r + dr * m,
+              nc = c + dc * m;
+            while (inBounds(nr, nc) && state.board[nr][nc]?.player === p) {
+              count++;
+              nr += dr * m;
+              nc += dc * m;
+            }
+          }
+          if (count > 4) return true;
+        }
+        return false;
+      }
+
+      function findAllStraightLines(r, c, p) {
+        const lines = [];
+        for (let [dr, dc] of [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, -1],
+        ]) {
+          let line = [[r, c]];
+          for (let m of [-1, 1]) {
+            let nr = r + dr * m,
+              nc = c + dc * m;
+            while (inBounds(nr, nc) && state.board[nr][nc]?.player === p) {
+              line.push([nr, nc]);
+              nr += dr * m;
+              nc += dc * m;
+            }
+          }
+          if (line.length === 4) lines.push(line);
+        }
+        return lines;
+      }
+
+      function checkIgo(p) {
+        const yg = [];
+        for (let r = 0; r < SIZE; r++)
+          for (let c = 0; c < SIZE; c++)
+            if (state.board[r][c]?.player === p && state.board[r][c].yugo)
+              yg.push([r, c]);
+
+        for (let [r, c] of yg) {
+          for (let [dr, dc] of [
+            [0, 1],
+            [1, 0],
+            [1, 1],
+            [1, -1],
+          ]) {
+            let cnt = 1;
+            for (let i = 1; i < 4; i++)
+              if (yg.some((y) => y[0] === r + dr * i && y[1] === c + dc * i))
+                cnt++;
+            if (cnt >= 4) return true;
+          }
+        }
+        return false;
+      }
+
+      // --- ANIMATION & PHYSICS LOOP ---
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const moveSpeed = 0.15;
+        const direction = new THREE.Vector3();
+        const right = new THREE.Vector3();
+
+        camera.getWorldDirection(direction);
+        direction.y = 0;
+        direction.normalize();
+
+        right.crossVectors(camera.up, direction).normalize();
+
+        if (keys.w) camera.position.addScaledVector(direction, moveSpeed);
+        if (keys.s) camera.position.addScaledVector(direction, -moveSpeed);
+        if (keys.a) camera.position.addScaledVector(right, moveSpeed);
+        if (keys.d) camera.position.addScaledVector(right, -moveSpeed);
+
+        if (keys.space) camera.position.y += moveSpeed;
+        if (keys.ctrl) camera.position.y -= moveSpeed;
+
+        if (camera.position.y < 0.5) {
+          camera.position.y = 0.5;
+        }
+
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            const mesh = state.meshes[r][c];
+            if (mesh && mesh.position.y > mesh.userData.targetY) {
+              mesh.position.y -=
+                (mesh.position.y - mesh.userData.targetY) * 0.15;
+            }
+          }
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    </script>
+  </body>
+</html>
