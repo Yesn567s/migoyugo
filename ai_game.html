@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="ai_game.css" />
   </head>
   <body>
-    <!-- Initial Tactical Setup -->
     <div id="colorSelectionModal" class="modal show">
       <div class="modal-box">
         <h2
@@ -111,7 +110,6 @@
       </div>
     </div>
 
-    <!-- Settlement Popup -->
     <div id="gameOverModal" class="modal">
       <div class="modal-box" style="position: relative">
         <span
@@ -232,17 +230,40 @@
           </div>
         </div>
 
-        <div class="registry">
+        <div
+          class="registry"
+          style="
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: hidden;
+            gap: 10px;
+          "
+        >
           <div
             id="log"
             style="
               font-family: monospace;
               font-size: 0.75rem;
               color: var(--accent);
+              flex-shrink: 0;
             "
           >
             Initialize systems...
           </div>
+          <div
+            id="moveLog"
+            style="
+              font-family: monospace;
+              font-size: 0.85rem;
+              overflow-y: auto;
+              flex-grow: 1;
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+              padding-right: 5px;
+            "
+          ></div>
         </div>
 
         <div class="actions">
@@ -300,6 +321,7 @@
       const labelWhitePoints = document.getElementById("labelWhitePoints");
       const labelBlackPoints = document.getElementById("labelBlackPoints");
       const logElement = document.getElementById("log");
+      const moveLogElement = document.getElementById("moveLog"); // Added move log element
       const undoBtn = document.getElementById("undoBtn");
       const resignBtn = document.getElementById("resignBtn");
       const colorSelectionModal = document.getElementById(
@@ -334,7 +356,7 @@
         gameStarted: false,
         gameMoves: [],
         aiThinking: false,
-        undoStack: [], // Stores history for undoing moves
+        undoStack: [],
       };
 
       function playAudio(name) {
@@ -398,7 +420,6 @@
         if (state.board[row][col] || wouldCreateLongLine(row, col, state.turn))
           return;
 
-        // Save current state before player moves
         saveUndoState();
         placeTile(row, col);
       }
@@ -437,6 +458,7 @@
         }
 
         state.gameMoves.push(notation);
+        updateMoveLog(); // UI update for the sidebar moves
 
         if (checkIgo(p)) {
           endGame(p, "TACTICAL IGO ACHIEVED");
@@ -445,7 +467,6 @@
           render();
           if (isBoardFull()) endGame(null, "FIELD SATURATED");
           if (!state.gameOver && state.turn !== playerColor) {
-            // Save state again before AI moves
             saveUndoState();
             setTimeout(makeAIMove, 800);
           }
@@ -504,6 +525,26 @@
         logElement.innerText = msg;
       }
 
+      // New function to update the dedicated move log display
+      function updateMoveLog() {
+        let groupedMoves = "";
+        for (let i = 0; i < state.gameMoves.length; i += 2) {
+          const turnNum = Math.floor(i / 2) + 1;
+          const p1Move = state.gameMoves[i].toUpperCase();
+          const p2Move = state.gameMoves[i + 1]
+            ? state.gameMoves[i + 1].toUpperCase()
+            : "";
+
+          groupedMoves += `<div style="display: flex; margin-bottom: 4px;">
+            <span style="color:var(--dim); width: 30px;">${turnNum}.</span> 
+            <span style="width: 45px; color: #fff;">${p1Move}</span> 
+            <span style="width: 45px; color: #aaa;">${p2Move}</span>
+          </div>`;
+        }
+        moveLogElement.innerHTML = groupedMoves;
+        moveLogElement.scrollTop = moveLogElement.scrollHeight;
+      }
+
       function resetGame() {
         state.board = Array.from({ length: size }, () =>
           Array(size).fill(null),
@@ -514,6 +555,7 @@
         state.undoStack = [];
         buildBoard();
         render();
+        updateMoveLog(); // Clear the move log on reset
       }
 
       function endGame(winner, reason) {
@@ -611,8 +653,6 @@
       }
 
       // --- UI EVENTS ---
-
-      // Fix for the History Close button
       document.getElementById("closeLogBtn").onclick = () =>
         logModal.classList.remove("show");
 
@@ -625,6 +665,7 @@
         state.turn = previousState.turn;
         state.gameMoves = previousState.gameMoves;
         render();
+        updateMoveLog(); // Update the UI upon undo
         pushLog("TACTICAL ROLLBACK EXECUTED.");
       };
 
@@ -639,24 +680,18 @@
         if (playerColor === 2) setTimeout(makeAIMove, 1000);
       };
 
-      // Add these lines to close the modal:
       closeGameOverBtn.onclick = () => {
         gameOverModal.classList.remove("show");
       };
 
       viewLogBtn.onclick = () => {
         let groupedMoves = "";
-
-        // Loop through the moves array, jumping 2 steps at a time
         for (let i = 0; i < state.gameMoves.length; i += 2) {
-          const turnNum = i / 2 + 1;
+          const turnNum = Math.floor(i / 2) + 1;
           const p1Move = state.gameMoves[i].toUpperCase();
-
-          // Check if player 2 has made a move yet for this turn
           const p2Move = state.gameMoves[i + 1]
             ? state.gameMoves[i + 1].toUpperCase()
             : "";
-
           groupedMoves += `<div style="margin-bottom:5px"><span style="color:var(--accent)">${turnNum}.</span> ${p1Move} ${p2Move}</div>`;
         }
 
