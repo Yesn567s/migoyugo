@@ -488,87 +488,6 @@ function other(player) {
   return player === 1 ? 2 : 1;
 }
 
-function getLegalMovesOnBoard(board, player) {
-  const legalMoves = [];
-  for (let r = 0; r < size; r += 1) {
-    for (let c = 0; c < size; c += 1) {
-      if (!board[r][c] && !wouldCreateLongLineOnBoard(board, r, c, player)) {
-        legalMoves.push({ row: r, col: c });
-      }
-    }
-  }
-  return legalMoves;
-}
-
-function countImmediateWinsOnBoard(board, player) {
-  return countExactFourCompletionMoves(board, player);
-}
-
-function countDoubleThreatsOnBoard(board, player) {
-  const threats = new Map();
-  const directions = [
-    [0, 1],
-    [1, 0],
-    [1, 1],
-    [1, -1],
-  ];
-
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      for (const [dr, dc] of directions) {
-        const cells = [];
-        let blocked = false;
-
-        for (let step = 0; step < 4; step += 1) {
-          const nextRow = row + step * dr;
-          const nextCol = col + step * dc;
-          if (
-            nextRow < 0 ||
-            nextRow >= size ||
-            nextCol < 0 ||
-            nextCol >= size
-          ) {
-            blocked = true;
-            break;
-          }
-          cells.push([nextRow, nextCol]);
-        }
-
-        if (blocked) continue;
-
-        let playerCount = 0;
-        let emptyCell = null;
-        for (const [nextRow, nextCol] of cells) {
-          const tile = board[nextRow][nextCol];
-          if (!tile) {
-            if (emptyCell) {
-              emptyCell = null;
-              break;
-            }
-            emptyCell = [nextRow, nextCol];
-          } else if (tile.player === player) {
-            playerCount += 1;
-          } else {
-            emptyCell = null;
-            break;
-          }
-        }
-
-        if (playerCount === 3 && emptyCell) {
-          const key = `${emptyCell[0]}:${emptyCell[1]}`;
-          threats.set(key, (threats.get(key) || 0) + 1);
-        }
-      }
-    }
-  }
-
-  let count = 0;
-  for (const value of threats.values()) {
-    if (value >= 2) count += 1;
-  }
-  return count;
-}
-
 function countExactFourCompletionMoves(board, player) {
   const winningMoves = new Set();
   const directions = [
@@ -700,128 +619,6 @@ function countOpenSequencesOnBoard(board, player, targetLength) {
   }
 
   return count;
-}
-
-function centerControlOnBoard(board, player) {
-  const center = (size - 1) / 2;
-  let score = 0;
-
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      const tile = board[row][col];
-      if (!tile || tile.player !== player) continue;
-
-      const distance = Math.abs(row - center) + Math.abs(col - center);
-      score += Math.max(0, 4 - distance / 2);
-    }
-  }
-
-  return score;
-}
-
-function connectivityOnBoard(board, player) {
-  const directions = [
-    [0, 1],
-    [1, 0],
-    [1, 1],
-    [1, -1],
-  ];
-
-  let pairs = 0;
-
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      const tile = board[row][col];
-      if (!tile || tile.player !== player) continue;
-
-      for (const [dr, dc] of directions) {
-        const nextRow = row + dr;
-        const nextCol = col + dc;
-        if (
-          nextRow >= 0 &&
-          nextRow < size &&
-          nextCol >= 0 &&
-          nextCol < size &&
-          board[nextRow][nextCol] &&
-          board[nextRow][nextCol].player === player
-        ) {
-          pairs += 1;
-        }
-      }
-    }
-  }
-
-  return pairs;
-}
-
-function influenceOnBoard(board, player) {
-  const influenced = new Set();
-
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      const tile = board[row][col];
-      if (!tile || tile.player !== player) continue;
-
-      for (let dr = -2; dr <= 2; dr += 1) {
-        for (let dc = -2; dc <= 2; dc += 1) {
-          if (dr === 0 && dc === 0) continue;
-          const nextRow = row + dr;
-          const nextCol = col + dc;
-          if (
-            nextRow < 0 ||
-            nextRow >= size ||
-            nextCol < 0 ||
-            nextCol >= size
-          ) {
-            continue;
-          }
-          if (!board[nextRow][nextCol]) {
-            influenced.add(`${nextRow}:${nextCol}`);
-          }
-        }
-      }
-    }
-  }
-
-  return influenced.size;
-}
-
-function expansionPotentialOnBoard(board, player) {
-  let score = 0;
-
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      if (board[row][col]) continue;
-      if (wouldCreateLongLineOnBoard(board, row, col, player)) continue;
-
-      let adjacentFriendly = 0;
-      for (let dr = -1; dr <= 1; dr += 1) {
-        for (let dc = -1; dc <= 1; dc += 1) {
-          if (dr === 0 && dc === 0) continue;
-          const nextRow = row + dr;
-          const nextCol = col + dc;
-          if (
-            nextRow < 0 ||
-            nextRow >= size ||
-            nextCol < 0 ||
-            nextCol >= size
-          ) {
-            continue;
-          }
-          const tile = board[nextRow][nextCol];
-          if (tile && tile.player === player) {
-            adjacentFriendly += 1;
-          }
-        }
-      }
-
-      if (adjacentFriendly > 0) {
-        score += adjacentFriendly;
-      }
-    }
-  }
-
-  return score;
 }
 
 function moveOrderScore(board, move, player) {
@@ -1006,8 +803,8 @@ function evaluate(board, aiPlayer) {
   totalScore -= oppIgoThreats * 200000;
 
   // --- 3. GUARANTEED YUGO THREATS (The Fix!) ---
-  let myThreats = countImmediateWinsOnBoard(board, aiPlayer);
-  let oppThreats = countImmediateWinsOnBoard(board, humanPlayer);
+  let myThreats = countExactFourCompletionMoves(board, aiPlayer);
+  let oppThreats = countExactFourCompletionMoves(board, humanPlayer);
   totalScore += myThreats * 5000;
   totalScore -= oppThreats * 80000; // MASSIVE PANIC: Block 3-in-a-row immediately!
 
@@ -1267,46 +1064,6 @@ function calculateHeatmap(board, player) {
   return heatScore;
 }
 
-function countMigoConnectivity(board, player) {
-  const directions = [
-    [0, 1],
-    [1, 0],
-    [1, 1],
-    [1, -1],
-  ];
-
-  let pairs = 0;
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      const tile = board[row][col];
-      if (!tile || tile.player !== player || tile.yugo) continue;
-
-      for (const [dr, dc] of directions) {
-        const nextRow = row + dr;
-        const nextCol = col + dc;
-        if (nextRow < 0 || nextRow >= size || nextCol < 0 || nextCol >= size) {
-          continue;
-        }
-        const nextTile = board[nextRow][nextCol];
-        if (nextTile && nextTile.player === player && !nextTile.yugo) {
-          pairs += 1;
-        }
-      }
-    }
-  }
-
-  return pairs;
-}
-
-function getMigoHeatmapValue(row, col) {
-  const center = 3.5;
-  const distance = Math.abs(row - center) + Math.abs(col - center);
-  if (distance <= 1.5) return 4;
-  if (distance <= 3) return 3;
-  if (distance <= 4.5) return 2;
-  return 1;
-}
-
 function countYugosOnBoard(board, player) {
   let count = 0;
   for (let row = 0; row < size; row += 1) {
@@ -1453,17 +1210,6 @@ function isBoardFullOnBoard(board) {
     }
   }
   return true;
-}
-
-function countPointsOnBoard(board, player) {
-  let count = 0;
-  for (let row = 0; row < size; row += 1) {
-    for (let col = 0; col < size; col += 1) {
-      const tile = board[row][col];
-      if (tile && tile.player === player && tile.yugo) count++;
-    }
-  }
-  return count;
 }
 
 // kalau ada 3 yugo dan 1 kosong
