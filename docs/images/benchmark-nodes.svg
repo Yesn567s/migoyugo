@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520"><rect width="900" height="520" fill="#fff"/>
+<text x="450.0" y="35" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700">Node Evaluation Comparison — Mid Scenario</text>
+<line x1="80" y1="440" x2="860" y2="440" stroke="#222"/><line x1="80" y1="60" x2="80" y2="440" stroke="#222"/>
+<text x="450.0" y="495" text-anchor="middle" font-family="Arial" font-size="16">Depth</text>
+<text x="20" y="260.0" transform="rotate(-90 20 260.0)" text-anchor="middle" font-family="Arial" font-size="16">Nodes evaluated (log scale)</text>
+<text x="80.0" y="465" text-anchor="middle" font-family="Arial" font-size="13">1</text>
+<text x="236.0" y="465" text-anchor="middle" font-family="Arial" font-size="13">2</text>
+<text x="392.0" y="465" text-anchor="middle" font-family="Arial" font-size="13">3</text>
+<text x="548.0" y="465" text-anchor="middle" font-family="Arial" font-size="13">4</text>
+<text x="704.0" y="465" text-anchor="middle" font-family="Arial" font-size="13">5</text>
+<text x="860.0" y="465" text-anchor="middle" font-family="Arial" font-size="13">6</text>
+<polyline points="80.0,440.0 236.0,363.2432512954339 392.0,287.31788094057043 548.0,211.52888250021218 704.0,135.76255299862203 860.0,60.0" fill="none" stroke="#1f77b4" stroke-width="3"/>
+<circle cx="80.0" cy="440.0" r="4" fill="#1f77b4"/>
+<circle cx="236.0" cy="363.2432512954339" r="4" fill="#1f77b4"/>
+<circle cx="392.0" cy="287.31788094057043" r="4" fill="#1f77b4"/>
+<circle cx="548.0" cy="211.52888250021218" r="4" fill="#1f77b4"/>
+<circle cx="704.0" cy="135.76255299862203" r="4" fill="#1f77b4"/>
+<circle cx="860.0" cy="60.0" r="4" fill="#1f77b4"/>
+<rect x="650" y="60" width="12" height="12" fill="#1f77b4"/><text x="670" y="70" font-family="Arial" font-size="14">Pure minimax</text>
+<polyline points="80.0,440.0 236.0,400.0648911726432 392.0,349.8674131353075 548.0,314.86781100685283 704.0,266.27715189769657 860.0,228.7413865209711" fill="none" stroke="#ff7f0e" stroke-width="3"/>
+<circle cx="80.0" cy="440.0" r="4" fill="#ff7f0e"/>
+<circle cx="236.0" cy="400.0648911726432" r="4" fill="#ff7f0e"/>
+<circle cx="392.0" cy="349.8674131353075" r="4" fill="#ff7f0e"/>
+<circle cx="548.0" cy="314.86781100685283" r="4" fill="#ff7f0e"/>
+<circle cx="704.0" cy="266.27715189769657" r="4" fill="#ff7f0e"/>
+<circle cx="860.0" cy="228.7413865209711" r="4" fill="#ff7f0e"/>
+<rect x="650" y="85" width="12" height="12" fill="#ff7f0e"/><text x="670" y="95" font-family="Arial" font-size="14">Alpha-beta pruning</text>
+</svg>

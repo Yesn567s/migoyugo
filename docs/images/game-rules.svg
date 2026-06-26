@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560">
+<rect width="960" height="560" fill="#05080f"/>
+<text x="60" y="70" font-family="Arial" font-size="34" font-weight="900" fill="#fff">Migo → Yugo → Igo</text>
+<text x="60" y="110" font-family="Arial" font-size="22" fill="#8ba3c7">Garis tepat 4 bidak membentuk Yugo. Empat Yugo sejajar menghasilkan Igo.</text>
+<g transform="translate(80,150)"><rect width="320" height="320" fill="#07101f" stroke="#00e5ff"/>
+<rect x="0" y="0" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="0" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="0" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="0" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="0" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="0" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="0" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="0" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="40" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="40" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="40" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="40" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="40" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="40" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="40" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="40" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="80" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="80" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="80" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="80" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="80" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="80" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="80" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="80" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="120" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="120" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="120" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="120" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="120" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="120" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="120" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="120" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="160" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="160" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="160" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="160" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="160" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="160" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="160" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="160" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="200" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="200" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="200" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="200" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="200" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="200" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="200" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="200" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="240" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="240" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="240" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="240" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="240" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="240" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="240" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="240" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="0" y="280" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="40" y="280" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="80" y="280" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="120" y="280" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="160" y="280" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="200" y="280" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<rect x="240" y="280" width="40" height="40" fill="rgba(255,255,255,0.08)" stroke="rgba(0,229,255,.18)"/>
+<rect x="280" y="280" width="40" height="40" fill="rgba(255,255,255,0.04)" stroke="rgba(0,229,255,.18)"/>
+<circle cx="60" cy="180" r="15" fill="#fff"/><circle cx="100" cy="180" r="15" fill="#fff"/><circle cx="140" cy="180" r="15" fill="#fff"/>
+<circle cx="180" cy="180" r="15" fill="#0a101d" stroke="#00e5ff" stroke-width="4"/><circle cx="180" cy="180" r="5" fill="#00e5ff"/>
+<path d="M50 180H190" stroke="#fff" stroke-width="5" opacity=".8"/></g>
+<g transform="translate(520,155)" font-family="Arial">
+<rect width="360" height="82" rx="16" fill="rgba(0,229,255,.08)" stroke="rgba(0,229,255,.35)"/><text x="24" y="35" font-size="24" fill="#00e5ff" font-weight="700">MIGO</text><text x="24" y="62" font-size="18" fill="#8ba3c7">Bidak biasa yang baru diletakkan.</text>
+<rect y="114" width="360" height="82" rx="16" fill="rgba(0,229,255,.08)" stroke="rgba(0,229,255,.35)"/><text x="24" y="149" font-size="24" fill="#00e5ff" font-weight="700">YUGO</text><text x="24" y="176" font-size="18" fill="#8ba3c7">Terbentuk dari garis tepat 4 bidak.</text>
+<rect y="228" width="360" height="82" rx="16" fill="rgba(255,51,102,.08)" stroke="rgba(255,51,102,.35)"/><text x="24" y="263" font-size="24" fill="#ff3366" font-weight="700">IGO</text><text x="24" y="290" font-size="18" fill="#8ba3c7">4 Yugo sejajar = menang langsung.</text>
+</g></svg>

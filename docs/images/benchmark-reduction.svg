@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520"><rect width="900" height="520" fill="#fff"/>
+<text x="450.0" y="35" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700">Alpha-Beta Node Reduction at Depth 6</text>
+<line x1="80" y1="440" x2="860" y2="440" stroke="#222"/><line x1="80" y1="60" x2="80" y2="440" stroke="#222"/>
+<rect x="160" y="60.0" width="120" height="380.0" fill="#1f77b4"/><text x="220.0" y="465" text-anchor="middle" font-family="Arial" font-size="14">early</text><text x="220.0" y="52.0" text-anchor="middle" font-family="Arial" font-size="14">98.52%</text>
+<rect x="380" y="61.427121396670714" width="120" height="378.5728786033293" fill="#1f77b4"/><text x="440.0" y="465" text-anchor="middle" font-family="Arial" font-size="14">mid</text><text x="440.0" y="53.427121396670714" text-anchor="middle" font-family="Arial" font-size="14">98.15%</text>
+<rect x="600" y="60.30856678846936" width="120" height="379.69143321153064" fill="#1f77b4"/><text x="660.0" y="465" text-anchor="middle" font-family="Arial" font-size="14">tactical</text><text x="660.0" y="52.30856678846936" text-anchor="middle" font-family="Arial" font-size="14">98.44%</text>
+</svg>
