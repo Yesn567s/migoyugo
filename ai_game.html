@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Migoyugo - AI Engagement</title>
+    <title>Migoyugo - AI GAME</title>
     <link rel="stylesheet" href="ai_game.css" />
   </head>
   <body>
@@ -20,10 +20,10 @@
             font-weight: 900;
           "
         >
-          AI ENGAGEMENT
+          AI GAME
         </h2>
         <p style="color: var(--dim); font-size: 0.8rem; margin-bottom: 25px">
-          Initialize tactical field and AI parameters.
+          Initialize Player and AI parameters.
         </p>
 
         <div class="ident-wrap">
@@ -37,7 +37,7 @@
               margin-bottom: 10px;
               text-align: center;
             "
-            >CHOOSE YOUR UNIT (White moves first)</label
+            >CHOOSE YOUR TILE (White moves first)</label
           >
           <div class="color-selection">
             <div
@@ -63,13 +63,13 @@
               display: block;
               margin-bottom: 5px;
             "
-            >COMMANDER IDENT</label
+            >PLAYER IDENTITY</label
           >
           <input
             type="text"
             id="playerName"
             class="ident-input"
-            value="Commander"
+            value="Player"
           />
         </div>
 
@@ -105,7 +105,7 @@
           "
           id="startGameBtn"
         >
-          BEGIN ENGAGEMENT
+          START GAME
         </button>
       </div>
     </div>
@@ -134,7 +134,7 @@
             margin-bottom: 5px;
           "
         >
-          CONFLICT SETTLED
+          GAME END
         </div>
         <h2
           id="goTitle"
@@ -146,7 +146,7 @@
           id="goSubtitle"
           style="color: var(--dim); font-size: 0.85rem; margin-bottom: 25px"
         >
-          Tactical objective achieved.
+          GAME OVER.
         </p>
 
         <div
@@ -196,14 +196,14 @@
           style="width: 100%"
           onclick="location.href = 'index.html'"
         >
-          EXIT COMMAND
+          EXIT GAME
         </button>
       </div>
     </div>
 
     <div class="app-shell">
       <header class="hdr">
-        <h1>MIGOYUGO COMMAND <span class="mv-tag">VS AI</span></h1>
+        <h1>MIGOYUGO <span class="mv-tag">VS AI</span></h1>
         <div class="target-bar" id="tHdr">Target: <b>--</b></div>
       </header>
 
@@ -374,7 +374,7 @@
       });
 
       startGameBtn.addEventListener("click", () => {
-        const name = playerNameInput.value.trim() || "Commander";
+        const name = playerNameInput.value.trim() || "Player";
         aiMaxDepth = parseInt(aiMaxDepthInput.value) || 2;
         players[playerColor].name = name;
         players[playerColor === 1 ? 2 : 1].name = "AI UNIT";
@@ -461,11 +461,11 @@
         updateMoveLog(); // UI update for the sidebar moves
 
         if (checkIgo(p)) {
-          endGame(p, "TACTICAL IGO ACHIEVED");
+          endGame(p, "IGO ACHIEVED");
         } else {
           state.turn = state.turn === 1 ? 2 : 1;
           render();
-          if (isBoardFull()) endGame(null, "FIELD SATURATED");
+          if (isBoardFull()) endGame(null, "BOARD FULL");
           if (!state.gameOver && state.turn !== playerColor) {
             saveUndoState();
             setTimeout(makeAIMove, 800);
@@ -671,7 +671,7 @@
 
       resignBtn.onclick = () => {
         const aiId = playerColor === 1 ? 2 : 1;
-        endGame(aiId, "COMMANDER RETREATED FROM FIELD.");
+        endGame(aiId, "opponent resigned");
       };
 
       document.getElementById("playAgainBtn").onclick = () => {
