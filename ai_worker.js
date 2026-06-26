@@ -1213,7 +1213,7 @@ function isBoardFullOnBoard(board) {
 }
 
 // kalau ada 3 yugo dan 1 kosong
-function  (board, player) {
+function getIgoThreatCells(board, player) {
   const threatCells = [];
   const directions = [
     [0, 1], // Horizontal
